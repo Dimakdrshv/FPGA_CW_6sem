@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module CW_REGFILE(
+module CW_REGFILE (
     input   wire        CLK,
     input   wire        RST,
     input   wire        S_EX_REQ,
@@ -59,12 +59,12 @@ module CW_REGFILE(
     
     localparam DATA_ADDR0 = 8'h00,
                DATA_ADDR1 = 8'h19,
-               X_ADDR0 = 8'h1A,
-               X_ADDR1 = 8'h1B,
-               Y_ADDR0 = 8'h1C,
-               Y_ADDR1 = 8'h1D,
-               SP_ADDR0 = 8'h1E,
-               SP_ADDR1 = 8'h1F;
+               X_ADDR0    = 8'h1A,
+               X_ADDR1    = 8'h1B,
+               Y_ADDR0    = 8'h1C,
+               Y_ADDR1    = 8'h1D,
+               SP_ADDR0   = 8'h1E,
+               SP_ADDR1   = 8'h1F;
     
     //------------------------> sequential logic
     always @(posedge CLK, posedge RST) begin
@@ -77,15 +77,15 @@ module CW_REGFILE(
                 REGFILE[X_ADDR0] <= X_D[7:0];
                 REGFILE[X_ADDR1] <= X_D[15:8];
             end
-            if (Y_WE) begin
+            else if (Y_WE) begin
                 REGFILE[Y_ADDR0] <= Y_D[7:0];
                 REGFILE[Y_ADDR1] <= Y_D[15:8];
             end 
-            if (SP_WE) begin
+            else if (SP_WE) begin
                 REGFILE[SP_ADDR0] <= SP_D[7:0];
                 REGFILE[SP_ADDR1] <= SP_D[15:8];
             end 
-            if (RG_WE && ~X_WE && ~Y_WE && ~SP_WE) begin
+            else if (RG_WE) begin
                 REGFILE[ADDR2] <= DATA2;
             end
         end
