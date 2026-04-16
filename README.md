@@ -15,12 +15,12 @@
 Используется следующая модель работы с Git:
 
 - `main` — стабильная ветка (production / проверенный код) **(в данную ветку не разрешается делать коммиты, исключительно pull request)**
-- `working/<MODULE_NAME>` — рабочие ветки для задач **(название файлов капсом без расширения (.v))**
-- `bugfix/<MODULE_NAME>` — ветки для исправления багов **(название файлов капсом без расширения (.v))**
+- `working/<CW_MODULE_NAME>` — рабочие ветки для задач **(название файлов капсом без расширения (.v))**
+- `bugfix/<CW_MODULE_NAME>` — ветки для исправления багов **(название файлов капсом без расширения (.v))**
 
 Примеры:
-- `working/UART_COUNTER`
-- `bugfix/DIVIDER`
+- `working/CW_UART_COUNTER`
+- `bugfix/CW_DIVIDER`
 
 ## 🚀 Начало работы
 
@@ -64,9 +64,9 @@ git pull
 
 ### 🌱 Создать новую ветку
 ```bash
-git checkout -b BRANCH_NAME/MODULE_NAME
+git checkout -b <BRANCH_NAME>/<CW_MODULE_NAME>
                 или
-git switch -c BRANCH_NAME/MODULE_NAME
+git switch -c <BRANCH_NAME>/<CW_MODULE_NAME>
 ```
 
 ### 💾 Добавить изменения
@@ -78,7 +78,7 @@ git commit -m "описание изменений (на английском я
 
 ### 🚀 Запушить ветку
 ```bash
-git push -u origin BRANCH_NAME/MODULE_NAME
+git push -u origin <BRANCH_NAME>/<CW_MODULE_NAME>
 ```
 
 ### 🔀 Создание Pull Request
@@ -87,7 +87,7 @@ git push -u origin BRANCH_NAME/MODULE_NAME
 
 1. Перейти в репозиторий
 2. Создать PR:
-    - from: BRANCH_NAME/MODULE_NAME
+    - from: <BRANCH_NAME>/<CW_MODULE_NAME>
     - to: main
 3. Дождаться ревью
 4. После approval совершить `merge`
