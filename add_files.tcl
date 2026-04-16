@@ -4,9 +4,6 @@
 set project_name "FPGA_CW_6sem"
 set project_dir  "."
 
-# Открыть проект (если не открыт)
-open_project "$project_dir/$project_name.xpr"
-
 # Пути к каталогам
 set src_dir     "$project_dir/${project_name}.srcs/sources_1"
 set sim_dir     "$project_dir/${project_name}.srcs/sim_1"
