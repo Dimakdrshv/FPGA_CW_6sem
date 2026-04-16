@@ -62,7 +62,4 @@ if {[file exists $constr_dir]} {
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
 
-# Сохранить проект
-save_project
-
 puts "Files successfully added to filesets"
