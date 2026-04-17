@@ -100,6 +100,6 @@ module CW_REGFILE (
     assign SP = {REGFILE[SP_ADDR1], REGFILE[SP_ADDR0]};
     
     assign S_EX_ACK = 1'b1;
-    assign S_D_RD = (S_EX_REQ & S_CMD == 3'b101) ? REGFILE[S_ADDR] : S_D_RD;
+    assign S_D_RD = (S_EX_REQ & (S_CMD == 3'b101)) ? REGFILE[S_ADDR] : 8'h00;
     
 endmodule
