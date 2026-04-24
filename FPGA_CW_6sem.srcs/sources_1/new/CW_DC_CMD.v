@@ -48,7 +48,7 @@ module CW_DC_CMD
     output reg  [ 7: 0] OPR0,
     output reg  [ 7: 0] OPR1,
     
-    output reg  [ 2: 0] BT_NUM,
+    output wire [ 2: 0] BT_NUM,
     
     input  wire [ 7: 0] ALU_RES,
     input  wire [ 1: 0] ALU_SREG,
@@ -64,9 +64,9 @@ module CW_DC_CMD
     input  wire [15: 0] PC, 
     output reg  [15: 0] PCD, 
     output reg          PC_LD, 
-    output reg          PC_INC, 
+    output wire         PC_INC, 
     
-    output reg  [17: 2] PGMA,
+    output wire [17: 2] PGMA,
     
     input  wire [31: 0] CMD,
     input  wire [ 3: 0] STAGES,
@@ -81,7 +81,7 @@ module CW_DC_CMD
     output reg  [ 7: 0] MEMWR,
     
     input  wire         IRQ_FLG,
-    output reg          EIRQ,
+    output wire         EIRQ,
     
     input  wire [15: 0] IADDR,
     input  wire         IRQ
@@ -178,6 +178,21 @@ module CW_DC_CMD
         endcase
     end
     
+    // ---------------- SP_WE ----------------
+    always @(*) 
+    begin
+        SP_WE =
+            // IRQ & EIRQ
+            ((STAGES == 4'b0001) && (IRQ && EIRQ)) ||
+    
+            // IRQ_FLG = 1
+            ((STAGES == 4'b0010) && IRQ_FLG) ||
+            ((STAGES == 4'b0100) && IRQ_FLG) ||
+    
+            // RETI
+            ((STAGES == 4'b0001) && !(IRQ && EIRQ) && (command == OP_RETI)) ||
+            ((STAGES == 4'b0010) && !IRQ_FLG && (command == OP_RETI));
+    end
 
     // ---------------- ALU_INST ----------------
     always @(*) begin
@@ -241,27 +256,12 @@ module CW_DC_CMD
     end
 
     // ---------------- BT_NUM ----------------
+    assign BT_NUM = CMD[27:25];
+
+    // ---------------- SREG_WE ----------------
     always @(*) begin
-        case (command)
-            OP_LSR : BT_NUM = mode[3:1];
-            OP_RSR : BT_NUM = mode[3:1];
-            OP_JMPS: BT_NUM = {2'b00, mode[1]};
-            default: BT_NUM = 3'b000;
-        endcase
-    end
-
-    
-
-
-    
-
-   
-
-    // ---------------- SREG_D / SREG_WE ----------------
-    always @(*) begin
-        SREG_D  = ALU_SREG;
         SREG_WE = 1'b0;
-
+    
         case (command)
             OP_ADD,
             OP_SUB,
@@ -271,126 +271,159 @@ module CW_DC_CMD
             OP_DEC,
             OP_LSR,
             OP_RSR:
-                if (STAGES == 4'b0001) SREG_WE = 1'b1;
-                else                   SREG_WE = 1'b0;
-
+                SREG_WE = (STAGES == 4'b0001);
+            OP_RETI:
+                SREG_WE = (STAGES == 4'b0010) && !IRQ_FLG;
+    
             default:
                 SREG_WE = 1'b0;
         endcase
     end
-
-    // ---------------- EIRQ / EIRQ_SET / EIRQ_RESET ----------------
+    // ---------------- SREG_D ----------------
     always @(*) begin
-        EIRQ       = SREG[2];
-        EIRQ_SET   = 1'b0;
-        EIRQ_RESET = 1'b0;
-
-        if (IRQ && SREG[2] && !IRQ_FLG) begin
-            EIRQ       = 1'b0;
-            EIRQ_RESET = 1'b1;
-        end
-
-        if (command == OP_RETI) begin
-            EIRQ     = 1'b1;
-            EIRQ_SET = 1'b1;
-        end
+        if ((STAGES == 4'b0010) && !IRQ_FLG && (command == OP_RETI))
+            SREG_D = MEMRD[1:0];
+        else
+            SREG_D = ALU_SREG;
     end
 
-    // ---------------- PC_LD / PCD / PC_INC ----------------
-    always @(*) begin
-        PC_LD  = 1'b0;
-        PCD    = 16'h0000;
-        PC_INC = 1'b0;
+    // ---------------- EIRQ_SET ----------------
+    always @(*) 
+    begin
+        EIRQ_SET = 
+            (STAGES == 4'b1000) && 
+            !IRQ_FLG            && 
+            (command == OP_RETI);
+    end
+    
+    // ---------------- EIRQ_RESET ----------------
+    always @(*) 
+    begin
+        EIRQ_RESET = (STAGES == 4'b1000) && IRQ_FLG;
+    end
+    
+    // ---------------- PCD ----------------
+    always @(*) 
+    begin
+        if ((STAGES == 4'b0100) &&
+            !IRQ_FLG &&
+            (command == OP_RETI))
+            PCD = {MEMRD[7:0], PC[7:0]};
+    
+        else if ((STAGES == 4'b1000) &&
+                 !IRQ_FLG &&
+                 (command == OP_RETI))
+            PCD = {PC[15:8], MEMRD[7:0]};
+    
+        else if ((STAGES == 4'b1000) && IRQ_FLG)
+            PCD = IADDR[15:0];
+    
+        else if ((STAGES == 4'b0001) &&
+                 !IRQ_FLG &&
+                 (command == OP_JMP))
+            PCD = CMD[15:0];
+            
+        else if (
+                (STAGES == 4'b0001) && !IRQ_FLG &&
+                (command == OP_JMPS) && JMP
+            )
+            PCD = PC + CMD[15:0] + 1'b1;
+    
+        else
+            PCD = 16'h0000;
+    end
 
-        if (IRQ && SREG[2] && !IRQ_FLG) begin
-            PC_LD = 1'b1;
-            PCD   = IADDR;
-        end
-        else begin
-            case (command)
-                OP_JMP: begin
-                    PC_LD = 1'b1;
-                    PCD   = CMD[15:0];
-                end
+    // ---------------- PC_LD ----------------
+    always @(*) 
+    begin
+        PC_LD = 
+            ((command == OP_RETI) && !IRQ_FLG && 
+                ((STAGES == 4'b0100) || (STAGES == 4'b1000))) ||
+    
+            ((STAGES == 4'b1000) && IRQ_FLG) ||
+    
+            ((STAGES == 4'b0001) && !IRQ_FLG && 
+                ((command == OP_JMP) || ((command == OP_JMPS) && JMP)));
+    end
 
-                OP_JMPS: begin
-                    if (JMP) begin
-                        PC_LD = 1'b1;
-                        PCD   = PC + CMD[15:0] + 1'b1;
-                    end
-                    else begin
-                        PC_INC = 1'b1;
-                    end
-                end
+    // ---------------- PC_INC ----------------
+    assign PC_INC = DONE && !(command == 4'b0000); // OP_NOP
 
-                OP_LD: begin
-                    if ((STAGES == 4'b0010) && DONE) PC_INC = 1'b1;
-                    else                             PC_INC = 1'b0;
-                end
+    // ---------------- MEMA ----------------
+    always @(*) 
+    begin
+        if ((STAGES == 4'b0001) && !(IRQ && EIRQ) &&
+            ((command == OP_LD) || (command == OP_STL) || (command == OP_ST)))
+            MEMA = mode[3] ? Y : X;
+    
+        else if (
+            (command == OP_RETI) &&
+            ((STAGES == 4'b0010) || (STAGES == 4'b0100) ||
+            ((STAGES == 4'b0001) && !(IRQ && EIRQ)))
+        )
+            MEMA = SP - 1'b1;
+    
+        else
+            MEMA = SP;
+    end
+    
+    // ---------------- MEMCMD ----------------
+    always @(*) 
+    begin
+        if (
+            ((STAGES == 4'b0001) && !(IRQ && EIRQ) &&
+                ((command == OP_RETI) || (command == OP_LD))) ||
+    
+            (((STAGES == 4'b0010) || (STAGES == 4'b0100)) &&
+                !IRQ_FLG && (command == OP_RETI))
+        )
+            MEMCMD = 3'b101;
+        else
+            MEMCMD = 3'b001;
+    end
 
-                default: begin
-                    if (STAGES == 4'b0001) PC_INC = 1'b1;
-                    else                    PC_INC = 1'b0;
-                end
-            endcase
-        end
+    // ---------------- MEMWR ----------------
+    always @(*) 
+    begin
+        if ((STAGES == 4'b0001) && (IRQ && EIRQ))
+            MEMWR = PC[7:0];
+    
+        else if ((STAGES == 4'b0010) && (IRQ_FLG))
+            MEMWR = PC[15:8];
+    
+        else if ((STAGES == 4'b0100) && (IRQ_FLG))
+            MEMWR = {6'h00, SREG[1:0]};
+    
+        else if ((STAGES == 4'b0001) && !(IRQ && EIRQ) &&
+            (command == OP_STL))
+            MEMWR = CMD[7:0];
+    
+        else
+            MEMWR = DATA1;
+    end
+
+    // ---------------- MEM ----------------
+    always @(*) 
+    begin
+        MEM =
+            ((STAGES == 4'b0001) && (IRQ && EIRQ)) ||
+    
+            ((STAGES == 4'b0010) && IRQ_FLG) ||
+            ((STAGES == 4'b0100) && IRQ_FLG) ||
+    
+            ((command == OP_RETI) &&
+                (((STAGES == 4'b0001) && !(IRQ && EIRQ)) ||
+                 ((STAGES == 4'b0010) && !IRQ_FLG) ||
+                 ((STAGES == 4'b0100) && !IRQ_FLG))) ||
+    
+            ((STAGES == 4'b0001) && !(IRQ && EIRQ) &&
+                ((command == OP_LD) || (command == OP_STL) || (command == OP_ST)));
     end
 
     // ---------------- PGMA ----------------
-    always @(*) begin
-        PGMA = PC[17:2];
-    end
-
-    // ---------------- MEM / MEMA / MEMCMD / MEMWR ----------------
-    always @(*) begin
-        MEM    = 1'b0;
-        MEMA   = 16'h0000;
-        MEMCMD = 3'b000;
-        MEMWR  = 8'h00;
-
-        case (command)
-            OP_LD: begin
-                MEM    = 1'b1;
-                MEMCMD = 3'b001;
-
-                case (mode[3:2])
-                    2'b00, 2'b01: MEMA = X;
-                    2'b10, 2'b11: MEMA = Y;
-                    default      : MEMA = 16'h0000;
-                endcase
-            end
-
-            OP_STL: begin
-                MEM    = 1'b1;
-                MEMCMD = 3'b010;
-                MEMWR  = CMD[7:0];
-
-                case (mode[3:2])
-                    2'b00, 2'b01: MEMA = X;
-                    2'b10, 2'b11: MEMA = Y;
-                    default      : MEMA = 16'h0000;
-                endcase
-            end
-
-            OP_ST: begin
-                MEM    = 1'b1;
-                MEMCMD = 3'b010;
-                MEMWR  = DATA1;
-
-                case (mode[3:2])
-                    2'b00, 2'b01: MEMA = X;
-                    2'b10, 2'b11: MEMA = Y;
-                    default      : MEMA = 16'h0000;
-                endcase
-            end
-
-            default: begin
-                MEM    = 1'b0;
-                MEMA   = 16'h0000;
-                MEMCMD = 3'b000;
-                MEMWR  = 8'h00;
-            end
-        endcase
-    end
+    assign PGMA = PC;
+    
+    // ---------------- EIRQ ----------------
+    assign EIRQ = SREG[2];
 
 endmodule
