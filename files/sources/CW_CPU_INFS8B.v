@@ -9,7 +9,7 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: Маршрутизатор системной шины STI 1.0
+// Description: STI 1.0 system bus router
 // 
 // Dependencies: 
 // 
