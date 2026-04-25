@@ -6,70 +6,69 @@
 ##  License    : MIT                                                                   ##
 #########################################################################################
 
-## log files
-*.log
-*.jou
-*.rpt
-*.vdi
+build/
 
-## bitstream
+# Vivado project files
+*.xpr
+*.jou
+*.log
+*.rpt
+*.str
+*.xml
+*.html
+*.pb
+*.dmp
+
+# Vivado generated folders
+.Xil/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.sim/
+*.runs/
+*.gen/
+*.srcs/
+
+# Vivado generated files
+*.os
+*.prj
+*.wcfg
+*.wdb
+*.vcd
+*.saif
+*.tcf
+
+# XSim
+xsim.dir/
+xvlog.*
+xelab.*
+xsim.*
+
+# Bitstreams / generated outputs
 *.bit
 *.bin
 *.mcs
 *.svf
-*.image
+*.ltx
 
-## netlist
+# Checkpoints / netlists
+*.dcp
 *.edf
 *.edif
-*.vn
-*.vm
-
-## SDF
 *.sdf
+*.ngc
+*.ngd
+*.ncd
 
-## sim dump
-*.vcd
-*.saif
-*.tcf
-*.wdb
+# Reports / timing
+*.tim
+*.mrp
+*.map
+*.par
 
-## others
-unisims
-
-## C-files
-*.elf
-*.a
-*.sa
-*.so
-*.lib
-
-## dirs
-vivado.cache/
-vivado.hw/
-vivado.ip_user_files/
-vivado.runs/
-vivado.sim/
-
-###### for Xilinx Vivado|ISE
-.Xil/
-.cache/
-fsm_encoding.os
-tab_*/
-webtalk.*
-vivado_pid*.str
-hs_err_pid*
-xelab.*
-xsim.*
-xvlog.*
-*.cache
-*.sim
-*.runs
-*.hw
-*.backup.*
-*.debug
-
-## checkpoint files
-*.dcp
-
-## mb more files here
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
