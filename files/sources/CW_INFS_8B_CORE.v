@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
-// Engineer: 
+// Engineer: Panina T.A.
 // 
 // Create Date: 25.04.2026 14:39:27
 // Design Name: 
