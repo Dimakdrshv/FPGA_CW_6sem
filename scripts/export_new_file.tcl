@@ -19,22 +19,22 @@ proc export_file {TYPE FILE_NAME} {
 
     switch -- $TYPE {
         source {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "imports" "sources" $FILE_NAME]
+            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "new" $FILE_NAME]
             set DEST_DIR  [file join $ROOT_DIR "files" "sources"]
         }
 
         sim {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1" "imports" "simulations" $FILE_NAME]
+            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1" "new" $FILE_NAME]
             set DEST_DIR  [file join $ROOT_DIR "files" "simulations"]
         }
 
         constr {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "constrs_1" "imports" "constraints" $FILE_NAME]
+            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "constrs_1" "new" $FILE_NAME]
             set DEST_DIR  [file join $ROOT_DIR "files" "constraints"]
         }
 
         mem {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "imports" "sources" $FILE_NAME]
+            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "new" $FILE_NAME]
             set DEST_DIR  [file join $ROOT_DIR "files" "sources"]
         }
 
@@ -51,7 +51,7 @@ proc export_file {TYPE FILE_NAME} {
         puts "ERROR: file not found:"
         puts "$FILE_PATH"
         puts ""
-        puts "Check that the file was imported into Vivado project."
+        puts "Check that the file exists in Vivado .srcs/*/new directory."
         return
     }
 
