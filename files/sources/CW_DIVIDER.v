@@ -44,8 +44,8 @@ module CW_DIVIDER #(
         else begin
             if (CNT == (MOD - 1)) 
                 CNT <= {CNT_WDT{1'b0}};
-				CE = 1'b1
-			else (CE = 1'b0)
+				CE <= 1'b1
+			else if (CE == 1'b0)
                 CNT <= CNT + 1;
         end
 	end
