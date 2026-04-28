@@ -70,5 +70,22 @@ xsim.*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# IDE
 .vscode/
 .idea/
+*.iml
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
