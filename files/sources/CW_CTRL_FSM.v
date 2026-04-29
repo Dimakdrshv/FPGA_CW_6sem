@@ -1,141 +1,156 @@
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company:
+// Engineer: Sorochinskii N.A.
+//
+// Create Date: 29.04.2026 13:28:03
+// Design Name:
+// Module Name: CW_CTRL_FSM
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description: Control finite state machine
+//
+// Dependencies:
+//
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+//
+//////////////////////////////////////////////////////////////////////////////////
 
 module CW_CTRL_FSM (
-    input wire CLK,
-    input wire RST,
+    // System signals
+    input  wire        CLK,
+    input  wire        RST,
 
-    input wire [31:0] PGMD,
+    // Control signals
+    output wire [ 3:0] STAGES,
+    input  wire [17:2] PGMA,
+    output reg  [31:0] CMD,
+    input  wire        MEM,
+    output wire        DONE,
+    output wire [ 7:0] MEMRD,
+    input  wire [15:0] MEMA,
+    input  wire [ 2:0] MEMCMD,
+    input  wire [ 7:0] MEMWR,
+    output reg         IRQ_FLG,
+    input  wire        EIRQ,
+    input  wire        IRQ,
 
-    input wire MEM,
-    input wire MEM_DONE,
+    // Program memory STI 1.0
+    output reg         PGM_S_EX_REQ,
+    output reg  [17:2] PGM_S_ADDR,
+    output reg  [ 3:0] PGM_S_NBE,
+    output reg  [ 2:0] PGM_S_CMD,
+    output reg  [31:0] PGM_S_D_WR,
+    input  wire        PGM_S_EX_ACK,
+    input  wire [31:0] PGM_S_D_RD,
 
-    input  wire IRQ,
-    input  wire EIRQ,
+    // Data memory STI 1.0
+    output reg         DM_S_EX_REQ,
+    output reg  [15:0] DM_S_ADDR,
+    output reg  [ 2:0] DM_S_CMD,
+    output reg  [ 7:0] DM_S_D_WR,
+    input  wire        DM_S_EX_ACK,
+    input  wire [ 7:0] DM_S_D_RD
+);
 
-    output reg [31:0] CMD,
-    output reg [3:0] STAGES,
-    output reg DONE,
-    output reg IRQ_FLG
-    );
+    localparam [1:0] FSM_PGMI = 2'b00,
+                     FSM_PGMW = 2'b01,
+                     FSM_WAIT = 2'b10,
+                     FSM_ASP  = 2'b11;
 
-    localparam [2:0] ST_FETCH = 3'd0,
-                     ST_EXEC1 = 3'd1,
-                     ST_EXEC2 = 3'd2,
-                     ST_EXEC3 = 3'd3,
-                     ST_EXEC4 = 3'd4;
+    localparam [2:0] STI_CMD_IDLE = 3'b000,
+                     STI_CMD_READ = 3'b101;
 
-    localparam [3:0] OP_LD = 4'b1000;
-    localparam [3:0] OP_RETI = 4'b0110;
-    localparam [3:0] OP_NOP = 4'b0000;
+    reg [1:0] FSM_STATE;
+    reg [3:0] I_STAGES;
 
-    reg [2:0] state;
-    reg [2:0] next_state;
+    wire STAGE_ACTIVE = (FSM_STATE == FSM_WAIT) ||
+                        ((FSM_STATE == FSM_ASP) && DM_S_EX_ACK);
 
-    reg [31:0] next_cmd;
-    reg [3:0] next_stages;
-    reg next_done;
-    reg next_irq_flg;
-
-    wire [3:0] command = CMD[31:28];
-    wire stage_done = ~MEM | MEM_DONE;
-
-    always @(*) begin
-        next_state = state;
-        next_cmd = CMD;
-        next_stages = STAGES;
-        next_done = 1'b0;
-        next_irq_flg = IRQ_FLG;
-
-        case (state)
-            ST_FETCH: begin
-                next_stages = 4'b0000;
-
-                if (IRQ && EIRQ) begin
-                    next_cmd = {OP_NOP, 28'h0000000};
-                    next_irq_flg = 1'b1;
-                    next_stages = 4'b0001;
-                    next_state = ST_EXEC1;
-                end else begin
-                    next_cmd = PGMD;
-                    next_irq_flg = 1'b0;
-                    next_stages = 4'b0001;
-                    next_state = ST_EXEC1;
-                end
-            end
-
-            ST_EXEC1: begin
-                next_stages = 4'b0001;
-
-                if (stage_done) begin
-                    if (IRQ_FLG || (command == OP_LD) || (command == OP_RETI)) begin
-                        next_stages = 4'b0010;
-                        next_state = ST_EXEC2;
-                    end else begin
-                        next_done = 1'b1;
-                        next_stages = 4'b0000;
-                        next_state = ST_FETCH;
-                    end
-                end
-            end
-
-            ST_EXEC2: begin
-                next_stages = 4'b0010;
-
-                if (stage_done) begin
-                    if (IRQ_FLG || (command == OP_RETI)) begin
-                        next_stages = 4'b0100;
-                        next_state = ST_EXEC3;
-                    end else begin
-                        next_done = 1'b1;
-                        next_stages = 4'b0000;
-                        next_state = ST_FETCH;
-                    end
-                end
-            end
-
-            ST_EXEC3: begin
-                next_stages = 4'b0100;
-
-                if (stage_done) begin
-                    next_stages = 4'b1000;
-                    next_state = ST_EXEC4;
-                end
-            end
-
-            ST_EXEC4: begin
-                next_stages = 4'b1000;
-
-                if (stage_done) begin
-                    next_done = 1'b1;
-                    next_stages = 4'b0000;
-                    next_state = ST_FETCH;
-                    next_irq_flg = 1'b0;
-                end
-            end
-
-            default: begin
-                next_state = ST_FETCH;
-                next_cmd = {OP_NOP, 28'h0000000};
-                next_stages = 4'b0000;
-                next_done = 1'b0;
-                next_irq_flg = 1'b0;
-            end
-        endcase
-    end
+    assign STAGES = STAGE_ACTIVE ? I_STAGES : 4'b0000;
+    assign DONE   = STAGE_ACTIVE && !MEM;
+    assign MEMRD  = DM_S_D_RD;
 
     always @(posedge CLK, posedge RST) begin
         if (RST) begin
-            state <= ST_FETCH;
-            CMD <= {OP_NOP, 28'h0000000};
-            STAGES <= 4'b0000;
-            DONE <= 1'b0;
-            IRQ_FLG <= 1'b0;
+            FSM_STATE    <= FSM_PGMI;
+            I_STAGES     <= 4'b0001;
+            CMD          <= 32'h00000000;
+            IRQ_FLG      <= 1'b0;
+
+            PGM_S_EX_REQ <= 1'b0;
+            PGM_S_ADDR   <= 16'h0000;
+            PGM_S_NBE    <= 4'b0000;
+            PGM_S_CMD    <= STI_CMD_IDLE;
+            PGM_S_D_WR   <= 32'h00000000;
+
+            DM_S_EX_REQ  <= 1'b0;
+            DM_S_ADDR    <= 16'h0000;
+            DM_S_CMD     <= STI_CMD_IDLE;
+            DM_S_D_WR    <= 8'h00;
         end else begin
-            state <= next_state;
-            CMD <= next_cmd;
-            STAGES <= next_stages;
-            DONE <= next_done;
-            IRQ_FLG <= next_irq_flg;
+            case (FSM_STATE)
+                FSM_PGMI: begin
+                    PGM_S_EX_REQ <= 1'b1;
+                    PGM_S_ADDR   <= PGMA;
+                    PGM_S_NBE    <= 4'b0000;
+                    PGM_S_CMD    <= STI_CMD_READ;
+                    PGM_S_D_WR   <= 32'h00000000;
+                    DM_S_EX_REQ  <= 1'b0;
+                    FSM_STATE    <= FSM_PGMW;
+                end
+
+                FSM_PGMW: begin
+                    if (PGM_S_EX_ACK) begin
+                        PGM_S_EX_REQ <= 1'b0;
+                        CMD          <= PGM_S_D_RD;
+                        FSM_STATE    <= FSM_WAIT;
+                    end
+                end
+
+                FSM_WAIT: begin
+                    if (MEM) begin
+                        DM_S_EX_REQ <= 1'b1;
+                        DM_S_ADDR   <= MEMA;
+                        DM_S_CMD    <= MEMCMD;
+                        DM_S_D_WR   <= MEMWR;
+                        I_STAGES    <= {I_STAGES[2:0], 1'b0};
+                        FSM_STATE   <= FSM_ASP;
+                    end else begin
+                        I_STAGES    <= 4'b0001;
+                        IRQ_FLG     <= IRQ_FLG ? 1'b0 : (EIRQ & IRQ);
+                        FSM_STATE   <= FSM_PGMI;
+                    end
+                end
+
+                FSM_ASP: begin
+                    if (DM_S_EX_ACK) begin
+                        if (MEM) begin
+                            DM_S_EX_REQ <= 1'b1;
+                            DM_S_ADDR   <= MEMA;
+                            DM_S_CMD    <= MEMCMD;
+                            DM_S_D_WR   <= MEMWR;
+                            I_STAGES    <= {I_STAGES[2:0], 1'b0};
+                        end else begin
+                            DM_S_EX_REQ <= 1'b0;
+                            I_STAGES    <= 4'b0001;
+                            IRQ_FLG     <= IRQ_FLG ? 1'b0 : (EIRQ & IRQ);
+                            FSM_STATE   <= FSM_PGMI;
+                        end
+                    end
+                end
+
+                default: begin
+                    FSM_STATE    <= FSM_PGMI;
+                    I_STAGES     <= 4'b0001;
+                    IRQ_FLG      <= 1'b0;
+                    PGM_S_EX_REQ <= 1'b0;
+                    DM_S_EX_REQ  <= 1'b0;
+                end
+            endcase
         end
     end
 
