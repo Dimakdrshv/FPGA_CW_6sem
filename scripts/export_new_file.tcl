@@ -14,28 +14,54 @@ set PROJECT_NAME "FPGA_CW_6sem"
 set ROOT_DIR  [file normalize [file join [file dirname [info script]] ".."]]
 set BUILD_DIR [file join $ROOT_DIR "build" $PROJECT_NAME]
 
+proc find_file_recursive {BASE_DIR FILE_NAME} {
+    set result {}
+
+    if {![file exists $BASE_DIR]} {
+        return $result
+    }
+
+    set items [glob -nocomplain -directory $BASE_DIR *]
+
+    foreach item $items {
+        if {[file isdirectory $item]} {
+            set sub_result [find_file_recursive $item $FILE_NAME]
+
+            foreach found $sub_result {
+                lappend result $found
+            }
+        } else {
+            if {[file tail $item] eq $FILE_NAME} {
+                lappend result [file normalize $item]
+            }
+        }
+    }
+
+    return $result
+}
+
 proc export_file {TYPE FILE_NAME} {
     global PROJECT_NAME ROOT_DIR BUILD_DIR
 
     switch -- $TYPE {
         source {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "new" $FILE_NAME]
-            set DEST_DIR  [file join $ROOT_DIR "files" "sources"]
+            set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1"]
+            set DEST_DIR   [file join $ROOT_DIR "files" "sources"]
         }
 
         sim {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1" "new" $FILE_NAME]
-            set DEST_DIR  [file join $ROOT_DIR "files" "simulations"]
+            set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1"]
+            set DEST_DIR   [file join $ROOT_DIR "files" "simulations"]
         }
 
         constr {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "constrs_1" "new" $FILE_NAME]
-            set DEST_DIR  [file join $ROOT_DIR "files" "constraints"]
+            set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "constrs_1"]
+            set DEST_DIR   [file join $ROOT_DIR "files" "constraints"]
         }
 
         mem {
-            set FILE_PATH [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1" "new" $FILE_NAME]
-            set DEST_DIR  [file join $ROOT_DIR "files" "sources"]
+            set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1"]
+            set DEST_DIR   [file join $ROOT_DIR "files" "sources"]
         }
 
         default {
@@ -45,15 +71,39 @@ proc export_file {TYPE FILE_NAME} {
         }
     }
 
-    set FILE_PATH [file normalize $FILE_PATH]
+    set SEARCH_DIR [file normalize $SEARCH_DIR]
 
-    if {![file exists $FILE_PATH]} {
-        puts "ERROR: file not found:"
-        puts "$FILE_PATH"
+    set MATCHES [find_file_recursive $SEARCH_DIR $FILE_NAME]
+
+    if {[llength $MATCHES] == 0} {
         puts ""
-        puts "Check that the file exists in Vivado .srcs/*/new directory."
+        puts "ERROR: file not found:"
+        puts "$FILE_NAME"
+        puts ""
+        puts "Searched recursively in:"
+        puts "$SEARCH_DIR"
+        puts ""
         return
     }
+
+    if {[llength $MATCHES] > 1} {
+        puts ""
+        puts "ERROR: multiple files found with name:"
+        puts "$FILE_NAME"
+        puts ""
+        puts "Matches:"
+
+        foreach match $MATCHES {
+            puts "  $match"
+        }
+
+        puts ""
+        puts "Rename one of the files or export manually."
+        puts ""
+        return
+    }
+
+    set FILE_PATH [lindex $MATCHES 0]
 
     file mkdir $DEST_DIR
 
