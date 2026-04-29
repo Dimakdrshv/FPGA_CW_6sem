@@ -51,11 +51,10 @@ module CW_CPU_INFS8B(
     
 reg [2:0] EN;
 always @* begin
-    EN = 3'b000;
-    casex (T_S_ADDR)
-        6'b0xxxxx: EN = 3'b001; // 000000b - 011111b : Select POH (I1)
-        6'b100000: EN = 3'b010; // 100000b           : Select SREG (I2)
-        6'b10001x: EN = 3'b100; // 100010b - 100011b : Select PC (I3)
+    casex ({T_S_CMD, T_S_ADDR})
+        {3'b101, 6'b0xxxxx}: EN = 3'b001; // 000000b - 011111b : Select POH (I1)
+        {3'bx01, 6'b100000}: EN = 3'b010; // 100000b           : Select SREG (I2)
+        {3'b101, 6'b10001x}: EN = 3'b100; // 100010b - 100011b : Select PC (I3)
         default:   EN = 3'b000;
     endcase
 end
@@ -72,17 +71,17 @@ assign I1_S_ADDR = T_S_ADDR[4:0];
 assign I2_S_ADDR = 1'b0;          
 assign I3_S_ADDR = T_S_ADDR[0];
 
-assign I1_S_EX_REQ = T_S_EX_REQ & EN[1];
-assign I2_S_EX_REQ = T_S_EX_REQ & EN[2];
-assign I3_S_EX_REQ = T_S_EX_REQ & EN[3];
+assign I1_S_EX_REQ = T_S_EX_REQ & EN[0];
+assign I2_S_EX_REQ = T_S_EX_REQ & EN[1];
+assign I3_S_EX_REQ = T_S_EX_REQ & EN[2];
 
-assign T_S_EX_ACK = (I1_S_EX_ACK | ~EN[1]) & 
-                    (I2_S_EX_ACK | ~EN[2]) & 
-                    (I3_S_EX_ACK | ~EN[3]);
+assign T_S_EX_ACK = (I1_S_EX_ACK | ~EN[0]) & 
+                    (I2_S_EX_ACK | ~EN[1]) & 
+                    (I3_S_EX_ACK | ~EN[2]);
 
-assign T_S_D_RD   = (I1_S_D_RD | ~{8{EN[1]}}) & 
-                    (I2_S_D_RD | ~{8{EN[2]}}) & 
-                    (I3_S_D_RD | ~{8{EN[3]}});
+assign T_S_D_RD   = (I1_S_D_RD | ~{8{EN[0]}}) & 
+                    (I2_S_D_RD | ~{8{EN[1]}}) & 
+                    (I3_S_D_RD | ~{8{EN[2]}});
 
 endmodule
 
