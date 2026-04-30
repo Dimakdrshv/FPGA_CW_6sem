@@ -108,7 +108,7 @@ module CW_IRQ_MONITOR (
             else if (io_wr_cmd && (S_ADDR[2:0] == 2'b011))
                 irq_flag[3] <= 1'b0;
 
-            if (io_wr_cmd && (S_ADDR[2] == 1'b1)) begin
+            if (io_wr_cmd && (S_ADDR[2:0] == 1'b100)) begin
                 mirq <= S_D_WR[3:0];
             end
         end
