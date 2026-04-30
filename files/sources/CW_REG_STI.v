@@ -31,41 +31,45 @@ module CW_REG_STI
    
     output wire        S_EX_ACK,
     output wire [ 7:0] S_D_RD, 
-    output reg  [15:0] OUT
+    output wire [15:0] OUT
 
 );
-
-    initial 
-    begin
-        OUT = 16'h0000;
-    end
     
     // S_D_RD
-    assign S_D_RD = S_ADDR ? OUT[15:8] : OUT[7:0];
+    assign S_D_RD = (S_EX_REQ && (S_CMD == 3'b101) && S_ADDR) ? OUT[15:8] : OUT[7:0];
     
     // DC
-    reg CE_0 = 1'b0, CE_1 = 1'b0;
+    reg CE_0, CE_1;
     always @(*) begin   
+        CE_0 = 1'b0;
+        CE_1 = 1'b0;
         if (S_EX_REQ && (S_CMD == 3'b001)) begin
             if (S_ADDR) begin
-                CE_0 = 1'b1;  CE_1 = 1'b0;
+                CE_0 = 1'b0;  CE_1 = 1'b1;
             end else begin
-                CE_0 = 1'b0; CE_1 = 1'b1;
+                CE_0 = 1'b1; CE_1 = 1'b0;
             end
         end else begin 
             CE_0 = 1'b0; CE_1 = 1'b0;
         end    
     end
-    
+
+    reg [7:0] RG_0 = 8'h00;
+    reg [7:0] RG_1 = 8'h00;
     always @(posedge CLK, posedge RST)
     begin   
         if (RST) begin
-            OUT <= 16'h0000;
+            RG_0 <= 8'h00;
+            RG_1 <= 8'h00;
         end else begin
-            OUT <= {S_D_WR, S_D_WR};
+            if (CE_0)
+                RG_0 <= S_D_WR;
+            if (CE_1)
+                RG_1 <= S_D_WR;
         end
     end
 
     assign S_EX_ACK = 1'b1;
-
+    assign OUT = {RG_1, RG_0};
+    
 endmodule
