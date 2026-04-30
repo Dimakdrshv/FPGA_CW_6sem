@@ -30,6 +30,7 @@ module CW_SREG (
     input wire        EIRQ_SET,
     input wire        EIRQ_RESET,
     input wire  [1:0] SREG_D,
+    input wire        S_ADDR,
     output wire       S_EX_ACK,
     output wire [7:0] S_D_RD,
     output reg  [2:0] SREG
