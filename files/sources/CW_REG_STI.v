@@ -36,13 +36,11 @@ module CW_REG_STI
 );
     
     // S_D_RD
-    assign S_D_RD = (S_EX_REQ && (S_CMD == 3'b101) && S_ADDR) ? OUT[15:8] : OUT[7:0];
+    assign S_D_RD = (S_EX_REQ && (S_CMD == 3'b101)) ? (S_ADDR ? OUT[15:8] : OUT[7:0]) : 8'h00;
     
     // DC
     reg CE_0, CE_1;
-    always @(*) begin   
-        CE_0 = 1'b0;
-        CE_1 = 1'b0;
+    always @(*) begin
         if (S_EX_REQ && (S_CMD == 3'b001)) begin
             if (S_ADDR) begin
                 CE_0 = 1'b0;  CE_1 = 1'b1;
