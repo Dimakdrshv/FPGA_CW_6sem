@@ -52,6 +52,11 @@ module CW_CTRL_FSM (
     input  wire [ 7:0] DM_S_D_RD
 );
 
+    initial begin
+        FSM_STATE = PGMI;
+        I_STAGES = 4'b0001;
+    end
+
     localparam [1:0] PGMI = 2'b00,
                      PGMW = 2'b01,
                      WAIT = 2'b10,
@@ -88,6 +93,7 @@ module CW_CTRL_FSM (
                 PGMI: begin
                     PGM_S_EX_REQ <= 1'b1;
                     PGM_S_ADDR   <= PGMA;
+                    FSM_STATE <= PGMW
                 end
 
                 PGMW: begin
@@ -114,7 +120,6 @@ module CW_CTRL_FSM (
 
                 ASP: begin
                     if (DM_S_EX_ACK) begin
-                        DM_S_EX_REQ <= 1'b1;
                         DM_S_ADDR   <= MEMA;
                         DM_S_CMD    <= MEMCMD;
                         DM_S_D_WR   <= MEMWR;
@@ -127,14 +132,6 @@ module CW_CTRL_FSM (
                             FSM_STATE   <= PGMI;
                         end
                     end
-                end
-
-                default: begin
-                    FSM_STATE    <= PGMI;
-                    I_STAGES     <= 4'b0001;
-                    IRQ_FLG      <= 1'b0;
-                    PGM_S_EX_REQ <= 1'b0;
-                    DM_S_EX_REQ  <= 1'b0;
                 end
             endcase
         end
