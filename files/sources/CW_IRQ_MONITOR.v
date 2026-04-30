@@ -40,7 +40,7 @@ module CW_IRQ_MONITOR (
     wire io_wr_cmd;
 
     //I don't know which S_CMD Sequence is permissive for DC. So for now it is 000.
-    assign io_wr_cmd = S_EX_REQ & (S_CMD == 3'b000);
+    assign io_wr_cmd = S_EX_REQ & (S_CMD == 3'b001);
 
     wire [3:0] btn_filt;
 
@@ -86,26 +86,26 @@ module CW_IRQ_MONITOR (
     end
 
     //Registers logic
-    always @(posedge CLK or posedge RST) begin
+    always @(posedge CLK, posedge RST) begin
         if (RST) begin
             irq_flag <= 4'b0000;
             mirq     <= 4'b0000;
         end else begin
 
             if (btn_filt[0]) irq_flag[0] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2] == 1'b0) && (S_ADDR[1:0] == 2'b00))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b000))
                 irq_flag[0] <= 1'b0;
 
             if (btn_filt[1]) irq_flag[1] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2] == 1'b0) && (S_ADDR[1:0] == 2'b01))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b001))
                 irq_flag[1] <= 1'b0;
 
             if (btn_filt[2]) irq_flag[2] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2] == 1'b0) && (S_ADDR[1:0] == 2'b10))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b010))
                 irq_flag[2] <= 1'b0;
 
             if (btn_filt[3]) irq_flag[3] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2] == 1'b0) && (S_ADDR[1:0] == 2'b11))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b011))
                 irq_flag[3] <= 1'b0;
 
             if (io_wr_cmd && (S_ADDR[2] == 1'b1)) begin
