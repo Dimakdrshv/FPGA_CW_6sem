@@ -93,7 +93,7 @@ module CW_CTRL_FSM (
                 PGMI: begin
                     PGM_S_EX_REQ <= 1'b1;
                     PGM_S_ADDR   <= PGMA;
-                    FSM_STATE <= PGMW
+                    FSM_STATE <= PGMW;
                 end
 
                 PGMW: begin
