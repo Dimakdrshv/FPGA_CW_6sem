@@ -52,10 +52,10 @@ module CW_CTRL_FSM (
     input  wire [ 7:0] DM_S_D_RD
 );
 
-    localparam [1:0] FSM_PGMI = 2'b00,
-                     FSM_PGMW = 2'b01,
-                     FSM_WAIT = 2'b10,
-                     FSM_ASP  = 2'b11;
+    localparam [1:0] PGMI = 2'b00,
+                     PGMW = 2'b01,
+                     WAIT = 2'b10,
+                     ASP  = 2'b11;
 
     reg [1:0] FSM_STATE;
     reg [3:0] I_STAGES;
@@ -75,44 +75,44 @@ module CW_CTRL_FSM (
             PGM_S_EX_REQ <= 1'b0;
             PGM_S_ADDR   <= 16'h0000;
             PGM_S_NBE    <= 4'b0000;
-            PGM_S_CMD    <= STI_CMD_IDLE;
+            PGM_S_CMD    <= 3'b110;
             PGM_S_D_WR   <= 32'h00000000;
 
             DM_S_EX_REQ  <= 1'b0;
             DM_S_ADDR    <= 16'h0000;
             DM_S_CMD     <= 3'b000;
             DM_S_D_WR    <= 8'h00;
-            FSM_STATE    <= FSM_PGMI;
+            FSM_STATE    <= PGMI;
         end else begin
             case (FSM_STATE)
-                FSM_PGMI: begin
+                PGMI: begin
                     PGM_S_EX_REQ <= 1'b1;
                     PGM_S_ADDR   <= PGMA;
                 end
 
-                FSM_PGMW: begin
+                PGMW: begin
                     if (PGM_S_EX_ACK) begin
                         PGM_S_EX_REQ <= 1'b0;
                         CMD          <= PGM_S_D_RD;
-                        FSM_STATE    <= FSM_WAIT;
+                        FSM_STATE    <= WAIT;
                     end
                 end
 
-                FSM_WAIT: begin
+                WAIT: begin
                     if (MEM) begin
                         DM_S_EX_REQ <= 1'b1;
                         DM_S_ADDR   <= MEMA;
                         DM_S_CMD    <= MEMCMD;
                         DM_S_D_WR   <= MEMWR;
                         I_STAGES    <= {I_STAGES[2:0], 1'b0};
-                        IRQ_FLG     <= EIRQ & IRQ
-                        FSM_STATE   <= FSM_ASP;
+                        IRQ_FLG     <= EIRQ & IRQ;
+                        FSM_STATE   <= ASP;
                     end else begin
-                        FSM_STATE   <= FSM_PGMI;
+                        FSM_STATE   <= PGMI;
                     end
                 end
 
-                FSM_ASP: begin
+                ASP: begin
                     if (DM_S_EX_ACK) begin
                         DM_S_EX_REQ <= 1'b1;
                         DM_S_ADDR   <= MEMA;
@@ -124,13 +124,13 @@ module CW_CTRL_FSM (
                             DM_S_EX_REQ <= 1'b0;
                             I_STAGES    <= 4'b0001;
                             IRQ_FLG     <= 1'b0;
-                            FSM_STATE   <= FSM_PGMI;
+                            FSM_STATE   <= PGMI;
                         end
                     end
                 end
 
                 default: begin
-                    FSM_STATE    <= FSM_PGMI;
+                    FSM_STATE    <= PGMI;
                     I_STAGES     <= 4'b0001;
                     IRQ_FLG      <= 1'b0;
                     PGM_S_EX_REQ <= 1'b0;
