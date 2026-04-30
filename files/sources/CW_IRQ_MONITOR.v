@@ -93,22 +93,22 @@ module CW_IRQ_MONITOR (
         end else begin
 
             if (btn_filt[0]) irq_flag[0] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b000))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 3'b000))
                 irq_flag[0] <= 1'b0;
 
             if (btn_filt[1]) irq_flag[1] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b001))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 3'b001))
                 irq_flag[1] <= 1'b0;
 
             if (btn_filt[2]) irq_flag[2] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b010))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 3'b010))
                 irq_flag[2] <= 1'b0;
 
             if (btn_filt[3]) irq_flag[3] <= 1'b1;
-            else if (io_wr_cmd && (S_ADDR[2:0] == 2'b011))
+            else if (io_wr_cmd && (S_ADDR[2:0] == 3'b011))
                 irq_flag[3] <= 1'b0;
 
-            if (io_wr_cmd && (S_ADDR[2:0] == 1'b100)) begin
+            if (io_wr_cmd && (S_ADDR[2:0] == 3'b100)) begin
                 mirq <= S_D_WR[3:0];
             end
         end
