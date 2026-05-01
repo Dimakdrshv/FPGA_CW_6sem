@@ -51,7 +51,24 @@ if {[llength $mem_files] > 0} {
 }
 
 # ---------------- Constraints ----------------
-set xdc_files [glob -nocomplain [file join $XDC_DIR "*.xdc"]]
+set ucf_files [glob -nocomplain [file join $XDC_DIR "*.ucf"]]
+
+set tmp_xdc_dir [file join $PROJECT_DIR "tmp_constraints"]
+file mkdir $tmp_xdc_dir
+
+set xdc_files {}
+
+foreach ucf_file $ucf_files {
+    set xdc_file [file join $tmp_xdc_dir "[file rootname [file tail $ucf_file]].xdc"]
+
+    puts "Converting constraint file:"
+    puts "  $ucf_file"
+    puts "  -> $xdc_file"
+
+    file copy -force $ucf_file $xdc_file
+
+    lappend xdc_files $xdc_file
+}
 
 if {[llength $xdc_files] > 0} {
     add_files -fileset constrs_1 $xdc_files

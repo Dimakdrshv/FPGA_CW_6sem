@@ -107,7 +107,11 @@ proc export_file {TYPE FILE_NAME} {
 
     file mkdir $DEST_DIR
 
-    set DEST_FILE [file join $DEST_DIR $FILE_NAME]
+    if {$TYPE eq "constr"} {
+        set DEST_FILE [file join $DEST_DIR "[file rootname $FILE_NAME].ucf"]
+    } else {
+        set DEST_FILE [file join $DEST_DIR $FILE_NAME]
+    }
 
     puts ""
     puts "Source:"
@@ -148,6 +152,6 @@ puts "Export helper loaded."
 puts "Available commands:"
 puts "  export_src    <file.v/.sv/.vhd>"
 puts "  export_sim    <testbench.v/.sv/.vhd>"
-puts "  export_constr <file.xdc>"
+puts "  export_constr <file.xdc>  -> exports as .ucf"
 puts "  export_mem    <file.mem/.coe/.hex>"
 puts ""
