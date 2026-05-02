@@ -52,10 +52,6 @@ module CW_CTRL_FSM (
     input  wire [ 7:0] DM_S_D_RD
 );
 
-    initial begin
-        FSM_STATE = PGMI;
-        I_STAGES = 4'b0001;
-    end
 
     localparam [1:0] PGMI = 2'b00,
                      PGMW = 2'b01,
@@ -64,12 +60,19 @@ module CW_CTRL_FSM (
 
     reg [1:0] FSM_STATE;
     reg [3:0] I_STAGES;
+    
+    initial 
+    begin
+        FSM_STATE = PGMI;
+        I_STAGES = 4'b0001;
+    end
+    
+    wire STAGE_VALID = (FSM_STATE == WAIT) || ((FSM_STATE == ASP) && DM_S_EX_ACK);
+                    
+    assign STAGES = {4{STAGE_VALID}} & I_STAGES;
+    assign DONE   = STAGE_VALID && ~MEM;
+    assign MEMRD  = DM_S_D_RD;
 
-    assign STAGES = ((FSM_STATE == WAIT) | ((FSM_STATE == ASP) 
-                        & DM_S_EX_ACK)) & I_STAGES;
-    assign DONE        = ((FSM_STATE == WAIT) | ((FSM_STATE == ASP) 
-                        & DM_S_EX_ACK)) & ~MEM;
-    assign MEMRD       = DM_S_D_RD;
 
     always @(posedge CLK, posedge RST) begin
         if (RST) begin
