@@ -65,9 +65,9 @@ module CW_CTRL_FSM (
     reg [1:0] FSM_STATE;
     reg [3:0] I_STAGES;
 
-    assign STAGES[3:0] = ((FSM_STATE[1:0] == WAIT) | ((FSM_STATE[2:0] == ASP) 
-                        & DM_S_EX_ACK)) & I_STAGES[3:0];
-    assign DONE        = ((FSM_STATE[1:0] == WAIT) | ((FSM_STATE[1:0] == ASP) 
+    assign STAGES = ((FSM_STATE == WAIT) | ((FSM_STATE == ASP) 
+                        & DM_S_EX_ACK)) & I_STAGES;
+    assign DONE        = ((FSM_STATE == WAIT) | ((FSM_STATE == ASP) 
                         & DM_S_EX_ACK)) & ~MEM;
     assign MEMRD       = DM_S_D_RD;
 
