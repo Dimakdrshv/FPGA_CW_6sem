@@ -7,7 +7,9 @@
 # export_src    CW_ALU.v
 # export_sim    TB_CW_ALU.v
 # export_constr Nexys-A7.xdc
-# export_mem    ROM.mem
+# export_mem_src ROM.mem
+# export_mem_sim TB_ROM.mem
+# export_mem     ROM.mem  ;# auto: searches sources_1 and sim_1
 
 set PROJECT_NAME "FPGA_CW_6sem"
 
@@ -59,14 +61,19 @@ proc export_file {TYPE FILE_NAME} {
             set DEST_DIR   [file join $ROOT_DIR "files" "constraints"]
         }
 
-        mem {
+        mem_src {
             set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1"]
             set DEST_DIR   [file join $ROOT_DIR "files" "sources"]
         }
 
+        mem_sim {
+            set SEARCH_DIR [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1"]
+            set DEST_DIR   [file join $ROOT_DIR "files" "simulations"]
+        }
+
         default {
             puts "ERROR: unknown type '$TYPE'"
-            puts "Allowed types: source, sim, constr, mem"
+            puts "Allowed types: source, sim, constr, mem_src, mem_sim"
             return
         }
     }
@@ -143,15 +150,70 @@ proc export_constr {FILE_NAME} {
     export_file constr $FILE_NAME
 }
 
+proc export_mem_src {FILE_NAME} {
+    export_file mem_src $FILE_NAME
+}
+
+proc export_mem_sim {FILE_NAME} {
+    export_file mem_sim $FILE_NAME
+}
+
 proc export_mem {FILE_NAME} {
-    export_file mem $FILE_NAME
+    global PROJECT_NAME ROOT_DIR BUILD_DIR
+
+    set SRC_SEARCH_DIR [file normalize [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sources_1"]]
+    set SIM_SEARCH_DIR [file normalize [file join $BUILD_DIR "${PROJECT_NAME}.srcs" "sim_1"]]
+
+    set SRC_MATCHES [find_file_recursive $SRC_SEARCH_DIR $FILE_NAME]
+    set SIM_MATCHES [find_file_recursive $SIM_SEARCH_DIR $FILE_NAME]
+
+    set total_matches [expr {[llength $SRC_MATCHES] + [llength $SIM_MATCHES]}]
+
+    if {$total_matches == 0} {
+        puts ""
+        puts "ERROR: memory file not found:"
+        puts "$FILE_NAME"
+        puts ""
+        puts "Searched recursively in:"
+        puts "  $SRC_SEARCH_DIR"
+        puts "  $SIM_SEARCH_DIR"
+        puts ""
+        return
+    }
+
+    if {$total_matches > 1} {
+        puts ""
+        puts "ERROR: multiple memory files found with name:"
+        puts "$FILE_NAME"
+        puts ""
+        puts "Source matches:"
+        foreach match $SRC_MATCHES {
+            puts "  $match"
+        }
+        puts "Simulation matches:"
+        foreach match $SIM_MATCHES {
+            puts "  $match"
+        }
+        puts ""
+        puts "Use export_mem_src or export_mem_sim explicitly."
+        puts ""
+        return
+    }
+
+    if {[llength $SRC_MATCHES] == 1} {
+        export_file mem_src $FILE_NAME
+    } else {
+        export_file mem_sim $FILE_NAME
+    }
 }
 
 puts ""
 puts "Export helper loaded."
 puts "Available commands:"
-puts "  export_src    <file.v/.sv/.vhd>"
-puts "  export_sim    <testbench.v/.sv/.vhd>"
-puts "  export_constr <file.xdc>  -> exports as .ucf"
-puts "  export_mem    <file.mem/.coe/.hex>"
+puts "  export_src     <file.v/.sv/.vhd>"
+puts "  export_sim     <testbench.v/.sv/.vhd>"
+puts "  export_constr  <file.xdc>  -> exports as .ucf"
+puts "  export_mem_src <file.mem/.coe/.hex>"
+puts "  export_mem_sim <file.mem/.coe/.hex>"
+puts "  export_mem     <file.mem/.coe/.hex>  ;# auto-detects sources_1 or sim_1"
 puts ""

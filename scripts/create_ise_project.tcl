@@ -57,13 +57,13 @@ foreach src_file [glob -nocomplain -directory $SRC_DIR *.v] {
 }
 
 # -------------------------
-# ADD MEMORY FILES (.mem)
+# ADD SOURCE MEMORY FILES (.mem)
 # -------------------------
 foreach mem_file [glob -nocomplain -directory $SRC_DIR *.mem] {
     set dst_file [file join $PROJECT_SRC_DIR [file tail $mem_file]]
     file copy -force $mem_file $dst_file
 
-    puts "Add memory: $dst_file"
+    puts "Add source memory: $dst_file"
     xfile add $dst_file
 }
 
@@ -75,6 +75,17 @@ foreach sim_file [glob -nocomplain -directory $SIM_DIR *.v] {
     file copy -force $sim_file $dst_file
 
     puts "Add simulation: $dst_file"
+    xfile add $dst_file
+}
+
+# -------------------------
+# ADD SIMULATION MEMORY FILES (.mem)
+# -------------------------
+foreach mem_file [glob -nocomplain -directory $SIM_DIR *.mem] {
+    set dst_file [file join $PROJECT_SIM_DIR [file tail $mem_file]]
+    file copy -force $mem_file $dst_file
+
+    puts "Add simulation memory: $dst_file"
     xfile add $dst_file
 }
 

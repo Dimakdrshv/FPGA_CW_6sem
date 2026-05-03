@@ -38,15 +38,15 @@ if {[llength $src_files] > 0} {
     import_files -fileset sources_1 -force
 }
 
-# ---------------- Memory files ----------------
-set mem_files [glob -nocomplain \
+# ---------------- Source memory files ----------------
+set src_mem_files [glob -nocomplain \
     [file join $SRC_DIR "*.mem"] \
     [file join $SRC_DIR "*.coe"] \
     [file join $SRC_DIR "*.hex"] \
 ]
 
-if {[llength $mem_files] > 0} {
-    add_files -fileset sources_1 $mem_files
+if {[llength $src_mem_files] > 0} {
+    add_files -fileset sources_1 $src_mem_files
     import_files -fileset sources_1 -force
 }
 
@@ -85,6 +85,18 @@ set sim_files [glob -nocomplain \
 
 if {[llength $sim_files] > 0} {
     add_files -fileset sim_1 $sim_files
+    import_files -fileset sim_1 -force
+}
+
+# ---------------- Simulation memory files ----------------
+set sim_mem_files [glob -nocomplain \
+    [file join $SIM_DIR "*.mem"] \
+    [file join $SIM_DIR "*.coe"] \
+    [file join $SIM_DIR "*.hex"] \
+]
+
+if {[llength $sim_mem_files] > 0} {
+    add_files -fileset sim_1 $sim_mem_files
     import_files -fileset sim_1 -force
 }
 
