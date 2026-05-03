@@ -260,11 +260,11 @@ Git отслеживает изменения только в:
 
 ### 7. Экспорт изменённых файлов перед commit
 
-Если вы изменили файл через Vivado, он изменился внутри папки `build/`.
+Если вы изменили файл через Vivado или ISE, он изменился внутри папки проекта (`build/`, `build_ise/` и т.д.).
 
 Перед commit нужно обязательно перенести изменённый файл обратно в папку `files/`.
 
-Для этого в Vivado `Tcl Console` подключите скрипт экспорта:
+Для этого в `Tcl Console` подключите скрипт экспорта:
 
 ```tcl
 source scripts/export_new_file.tcl
@@ -277,6 +277,8 @@ export_src
 export_sim
 export_constr
 export_mem
+export_mem_src
+export_mem_sim
 ```
 
 ---
@@ -327,7 +329,7 @@ files/simulations/
 
 ### 10. Экспорт constraints
 
-Если был изменён `.xdc` файл:
+Если был изменён `.xdc` или `.ucf` файл:
 
 ```tcl
 export_constr <имя_файла>
@@ -349,7 +351,7 @@ files/constraints/
 
 ### 11. Экспорт memory-файлов
 
-Если был изменён или создан файл памяти:
+Если был изменён или создан memory-файл (`.mem`, `.coe`, `.hex`):
 
 ```tcl
 export_mem <имя_файла>
@@ -363,13 +365,61 @@ export_mem program.coe
 export_mem init.hex
 ```
 
-Файл будет перенесён в:
+Команда автоматически:
+
+- ищет файл в `sources_1` и `sim_1`
+- определяет, является ли файл source или simulation
+- экспортирует файл в нужную папку
+
+---
+
+#### Source memory files
+
+Если memory-файл относится к исходным файлам проекта, он будет перенесён в:
 
 ```text
 files/sources/
 ```
 
+Пример:
+
+```text
+files/sources/ROM.mem
+```
+
 ---
+
+#### Simulation memory files
+
+Если memory-файл относится к simulation/testbench, он будет перенесён в:
+
+```text
+files/simulations/
+```
+
+Пример:
+
+```text
+files/simulations/TB_ROM.mem
+```
+
+---
+
+#### Явный экспорт memory-файлов
+
+Если файл с одинаковым именем существует и в source, и в simulation, используйте явные команды:
+
+```tcl
+export_mem_src <имя_файла>
+export_mem_sim <имя_файла>
+```
+
+Примеры:
+
+```tcl
+export_mem_src ROM.mem
+export_mem_sim ROM.mem
+```
 
 ### 12. Важно про export
 
