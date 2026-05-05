@@ -53,14 +53,18 @@ generate
     end
 endgenerate
 
-assign S_D_RD = (generate_spram[0].MEMORY & {8{S_ADDR[2:0] == 3'd0}}) |
+wire RE;
+assign RE = S_EX_REQ && S_CMD[2];
+
+assign S_D_RD = RE ? 
+               ((generate_spram[0].MEMORY & {8{S_ADDR[2:0] == 3'd0}}) |
                 (generate_spram[1].MEMORY & {8{S_ADDR[2:0] == 3'd1}}) |
                 (generate_spram[2].MEMORY & {8{S_ADDR[2:0] == 3'd2}}) |
                 (generate_spram[3].MEMORY & {8{S_ADDR[2:0] == 3'd3}}) |
                 (generate_spram[4].MEMORY & {8{S_ADDR[2:0] == 3'd4}}) |
                 (generate_spram[5].MEMORY & {8{S_ADDR[2:0] == 3'd5}}) |
                 (generate_spram[6].MEMORY & {8{S_ADDR[2:0] == 3'd6}}) |
-                (generate_spram[7].MEMORY & {8{S_ADDR[2:0] == 3'd7}});
+                (generate_spram[7].MEMORY & {8{S_ADDR[2:0] == 3'd7}})) : 8'h00;
 
 assign S_EX_ACK = 1'b1;
 
