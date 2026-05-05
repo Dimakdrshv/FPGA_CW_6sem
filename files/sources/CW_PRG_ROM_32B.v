@@ -22,6 +22,7 @@
 module CW_PRG_ROM_32B(
     input  wire        S_EX_REQ,
     input  wire [11:2] S_ADDR,
+    input  wire [2:0]  S_CMD,
     output wire        S_EX_ACK,
     output wire [31:0] S_D_RD
 );
@@ -29,7 +30,7 @@ module CW_PRG_ROM_32B(
 reg [31:0] ROM [0:1023];
 initial $readmemh("prg_mem.mem", ROM);
 
-assign S_D_RD = ROM[S_ADDR];
+assign S_D_RD = (S_EX_REQ && (S_CMD == 3'b110)) ? ROM[S_ADDR] : {(32){1'b0}};
 assign S_EX_ACK = 1'b1;
 
 endmodule
