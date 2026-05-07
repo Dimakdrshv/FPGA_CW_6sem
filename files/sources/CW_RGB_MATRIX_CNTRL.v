@@ -99,17 +99,13 @@ module CW_RGB_MATRIX_CNTRL
     assign S_EX_ACK = 1'b1;
     
     always @* begin
-        if (S_EX_REQ && S_CMD == 3'b101) begin
-            case (S_ADDR)
-                2'b00:   S_D_RD = {4'b0000, DATA_HEX};
-                2'b01:   S_D_RD = PWM_R;
-                2'b10:   S_D_RD = PWM_G;
-                2'b11:   S_D_RD = PWM_B;
-                default: S_D_RD = 8'h00;
-            endcase
-        end else begin
-            S_D_RD = 8'h00;
-        end
+        case (S_ADDR)
+            2'b00:   S_D_RD = {4'b0000, DATA_HEX};
+            2'b01:   S_D_RD = PWM_R;
+            2'b10:   S_D_RD = PWM_G;
+            2'b11:   S_D_RD = PWM_B;
+            default: S_D_RD = 8'h00;
+        endcase
     end
     
     // CE_*X

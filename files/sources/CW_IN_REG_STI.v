@@ -27,7 +27,8 @@ module CW_IN_REG_STI (
     //Unused STI 1.0 Ports
     input  wire  [7:0] S_D_WR,     
     input  wire  [2:0] S_CMD,     
-    input  wire        S_EX_REQ,   
+    input  wire        S_EX_REQ,
+    input  wire        S_ADDR,   
 
     output wire  [7:0] S_D_RD,
     output wire        S_EX_ACK
