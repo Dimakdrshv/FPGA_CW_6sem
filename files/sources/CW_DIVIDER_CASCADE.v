@@ -22,6 +22,7 @@
 
 module CW_DIVIDER_CASCADE
 #(
+    parameter CNT_WDT = 10,
     parameter MOD = 10
 )
 (
@@ -31,7 +32,6 @@ module CW_DIVIDER_CASCADE
     output reg  CEO
 );
     
-    localparam CNT_WDT = $clog2(MOD);
     reg [CNT_WDT - 1 : 0] CNT;
     
     initial begin
