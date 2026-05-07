@@ -90,10 +90,10 @@ module CW_RGB_MATRIX_CNTRL
     
     // --------------------> combinational logic
     // DC_CE
-    assign CE_DATA_HEX = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b00)) ? 1'b1 : 1'b0;
-    assign CE_PWM_R    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b01)) ? 1'b1 : 1'b0;
-    assign CE_PWM_G    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b10)) ? 1'b1 : 1'b0;
-    assign CE_PWM_B    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b11)) ? 1'b1 : 1'b0;
+    assign CE_DATA_HEX = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b00));
+    assign CE_PWM_R    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b01));
+    assign CE_PWM_G    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b10));
+    assign CE_PWM_B    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b11));
     
     // STI 1.0
     assign S_EX_ACK = 1'b1;
@@ -113,7 +113,7 @@ module CW_RGB_MATRIX_CNTRL
     end
     
     // CE_*X
-    assign CE_24X = CNT_24X[7:1] & (~{(7){CNT_24X[0]}}) & {(7){CE_PWM}}; 
+    assign CE_24X = (&CNT_24X[7:1]) & (~CNT_24X[0]) & (CE_PWM); 
     assign CE_8X  = ~CT_MOD3[0] & CT_MOD3[1] & CE_24X;
     
     // DC 3:8
