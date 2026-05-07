@@ -60,20 +60,15 @@ module CW_7SEG_CNTRL
     assign CE_DP_IN = S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 3'b101);
     
     always @* begin
-        S_D_RD = 8'b0000_0000;
-        
-        if (S_EX_REQ && (S_CMD == 3'b101)) begin
-            case (S_ADDR)
-                3'b000: S_D_RD = HEX_IN[31:24];
-                3'b001: S_D_RD = HEX_IN[23:16];
-                3'b010: S_D_RD = HEX_IN[15:8];
-                3'b011: S_D_RD = HEX_IN[7:0];
-                3'b100: S_D_RD = BLANK;
-                3'b101: S_D_RD = DP_IN;
-                
-                default: S_D_RD = 8'b0000_0000;
-            endcase    
-        end
+        case (S_ADDR)
+            3'b000:  S_D_RD = HEX_IN[31:24];
+            3'b001:  S_D_RD = HEX_IN[23:16];
+            3'b010:  S_D_RD = HEX_IN[15:8];
+            3'b011:  S_D_RD = HEX_IN[7:0];
+            3'b100:  S_D_RD = BLANK;
+            3'b101:  S_D_RD = DP_IN;
+            default: S_D_RD = 8'b0000_0000;
+        endcase
     end
     
     assign S_EX_ACK = 1'b1;

@@ -36,7 +36,7 @@ module CW_REG_STI
 );
     
     // S_D_RD
-    assign S_D_RD = (S_EX_REQ && (S_CMD == 3'b101)) ? (S_ADDR ? OUT[15:8] : OUT[7:0]) : 8'h00;
+    assign S_D_RD = S_ADDR ? OUT[15:8] : OUT[7:0];
     
     // DC
     reg CE_0, CE_1;
