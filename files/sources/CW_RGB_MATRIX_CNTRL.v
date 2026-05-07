@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:
-// Engineer:
+// Engineer: Kudryashov D.S.
 //
 // Create Date: 05.05.2026
 // Design Name:
@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module CW_RGB_CONTROLLER
+module CW_RGB_MATRIX_CNTRL
 (
     input  wire       CLK,
     input  wire       RST,
@@ -39,424 +39,244 @@ module CW_RGB_CONTROLLER
     output reg  [7:0] ROW
 );
 
-    localparam [2:0] STI_CMD_WR = 3'b001;
-    localparam [2:0] STI_CMD_RD = 3'b101;
-
-    localparam [1:0] ADDR_DATA  = 2'b00;
-    localparam [1:0] ADDR_PWM_R = 2'b01;
-    localparam [1:0] ADDR_PWM_B = 2'b10;
-    localparam [1:0] ADDR_PWM_G = 2'b11;
-
-    localparam [1:0] MOD3_R = 2'd0;
-    localparam [1:0] MOD3_G = 2'd1;
-    localparam [1:0] MOD3_B = 2'd2;
-
+    // --------------------> initial
+    wire CE_DATA_HEX;
+    wire CE_PWM_R;
+    wire CE_PWM_G;
+    wire CE_PWM_B;
+    
     reg [3:0] DATA_HEX;
-    reg [3:0] DATA;
     reg [7:0] PWM_R;
     reg [7:0] PWM_G;
     reg [7:0] PWM_B;
-
-    reg [7:0] CT_PWM;
+    
+    reg [7:0] CNT_24X;
+    wire CE_24X;
     reg [1:0] CT_MOD3;
+    wire CE_8X;
     reg [2:0] CT_MATRIX;
-
-    wire       CE_24X;
-    wire       CE_8X;
-    wire [7:0] DC3_8;
+    
+    reg [3:0] DATA;
+    
+    wire PWM_P_R;
+    wire PWM_P_G;
+    wire PWM_P_B;
+    
+    reg [7:0] DC;
+    
+    wire [7:0] CL_R;
+    wire [7:0] CL_G;
+    wire [7:0] CL_B;
+    
     wire [7:0] ROW_DATA;
-
-    wire PWM_R_P;
-    wire PWM_R_N;
-    wire PWM_G_P;
-    wire PWM_G_N;
-    wire PWM_B_P;
-    wire PWM_B_N;
-
+    
     initial begin
-        DATA_HEX  = 4'h0;
-        DATA      = 4'h0;
-        PWM_R     = 8'h00;
-        PWM_G     = 8'h00;
-        PWM_B     = 8'h00;
-        CT_PWM    = 8'h00;
-        CT_MOD3   = MOD3_R;
+        COL_R = 8'h00;
+        COL_G = 8'h00;
+        COL_B = 8'h00;
+        ROW   = 8'h00;
+        
+        DATA_HEX = 4'h0;
+        PWM_R    = 8'h00;
+        PWM_G    = 8'h00;
+        PWM_B    = 8'h00;
+        
+        CNT_24X   = 8'h00;
+        CT_MOD3   = 2'b00;
         CT_MATRIX = 3'b000;
-        COL_R     = 8'h00;
-        COL_G     = 8'h00;
-        COL_B     = 8'h00;
-        ROW       = 8'h00;
-        S_D_RD    = 8'h00;
+        
+        DATA = 4'h0;
     end
-
-    assign CE_24X = CE_PWM && (CT_PWM == 8'hFF);
-    assign CE_8X  = CE_24X && (CT_MOD3 == MOD3_B);
-    assign DC3_8  = 8'b0000_0001 << CT_MATRIX;
-    assign ROW_DATA = HEX_COLUMN(DATA, CT_MATRIX);
-
+    
+    // --------------------> combinational logic
+    // DC_CE
+    assign CE_DATA_HEX = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b00)) ? 1'b1 : 1'b0;
+    assign CE_PWM_R    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b01)) ? 1'b1 : 1'b0;
+    assign CE_PWM_G    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b10)) ? 1'b1 : 1'b0;
+    assign CE_PWM_B    = (S_EX_REQ && (S_CMD == 3'b001) && (S_ADDR == 2'b11)) ? 1'b1 : 1'b0;
+    
+    // STI 1.0
     assign S_EX_ACK = 1'b1;
-
+    
     always @* begin
-        S_D_RD = 8'h00;
-
-        if (S_EX_REQ && (S_CMD == STI_CMD_RD)) begin
+        if (S_EX_REQ && S_CMD == 3'b101) begin
             case (S_ADDR)
-                ADDR_DATA:  S_D_RD = {4'h0, DATA_HEX};
-                ADDR_PWM_R: S_D_RD = PWM_R;
-                ADDR_PWM_B: S_D_RD = PWM_B;
-                ADDR_PWM_G: S_D_RD = PWM_G;
-                default:    S_D_RD = 8'h00;
+                2'b00:   S_D_RD = {4'b0000, DATA_HEX};
+                2'b01:   S_D_RD = PWM_R;
+                2'b10:   S_D_RD = PWM_G;
+                2'b11:   S_D_RD = PWM_B;
+                default: S_D_RD = 8'h00;
             endcase
+        end else begin
+            S_D_RD = 8'h00;
         end
     end
-
+    
+    // CE_*X
+    assign CE_24X = CNT_24X[7:1] & (~{(7){CNT_24X[0]}}) & {(7){CE_PWM}}; 
+    assign CE_8X  = ~CT_MOD3[0] & CT_MOD3[1] & CE_24X;
+    
+    // DC 3:8
+    always @* begin
+        case (CT_MATRIX)
+            3'b000:  DC = 8'b0000_0001;
+            3'b001:  DC = 8'b0000_0010;
+            3'b010:  DC = 8'b0000_0100;
+            3'b011:  DC = 8'b0000_1000;
+            3'b100:  DC = 8'b0001_0000;
+            3'b101:  DC = 8'b0010_0000;
+            3'b110:  DC = 8'b0100_0000;
+            3'b111:  DC = 8'b1000_0000;
+            default: DC = 8'h00;
+        endcase
+    end
+    
+    // CL
+    assign CL_R = ~{(8){CT_MOD3[0]}} & ~{(8){CT_MOD3[1]}} & {(8){PWM_P_R}} & DC;
+    assign CL_G = {(8){CT_MOD3[0]}} & ~{(8){CT_MOD3[1]}} & {(8){PWM_P_G}} & DC;
+    assign CL_B = ~{(8){CT_MOD3[0]}} & {(8){CT_MOD3[1]}} & {(8){PWM_P_B}} & DC;
+    
+    // --------------------> sequantial logic
     always @(posedge CLK, posedge RST) begin
         if (RST) begin
             DATA_HEX <= 4'h0;
-            DATA     <= 4'h0;
             PWM_R    <= 8'h00;
             PWM_G    <= 8'h00;
             PWM_B    <= 8'h00;
         end else begin
-            if (S_EX_REQ && (S_CMD == STI_CMD_WR)) begin
-                case (S_ADDR)
-                    ADDR_DATA:  DATA_HEX <= S_D_WR[3:0];
-                    ADDR_PWM_R: PWM_R    <= S_D_WR;
-                    ADDR_PWM_B: PWM_B    <= S_D_WR;
-                    ADDR_PWM_G: PWM_G    <= S_D_WR;
-                    default: begin
-                        DATA_HEX <= DATA_HEX;
-                        PWM_R    <= PWM_R;
-                        PWM_G    <= PWM_G;
-                        PWM_B    <= PWM_B;
-                    end
-                endcase
-            end
-
-            // The visible symbol changes only after the last RGB pass of column 7.
-            if (CE_8X && (CT_MATRIX == 3'd7)) begin
-                DATA <= DATA_HEX;
+            DATA_HEX <= CE_DATA_HEX ? S_D_WR[3:0] : DATA_HEX;
+            PWM_R    <= CE_PWM_R    ? S_D_WR      : PWM_R;
+            PWM_G    <= CE_PWM_G    ? S_D_WR      : PWM_G;
+            PWM_B    <= CE_PWM_B    ? S_D_WR      : PWM_B;
+        end
+    end
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
+            CNT_24X <= 8'h00;
+        end else begin
+            if (CE_24X) begin
+                CNT_24X <= 8'h00;
+            end else if (CE_PWM) begin
+                CNT_24X <= CNT_24X + 1'b1;
             end
         end
     end
-
+    
     always @(posedge CLK, posedge RST) begin
         if (RST) begin
-            CT_PWM    <= 8'h00;
-            CT_MOD3   <= MOD3_R;
+            CT_MOD3 <= 2'b00;
+        end else begin
+            if (CE_24X & (CT_MOD3 == 2'b10)) begin
+                CT_MOD3 <= 2'b00;
+            end else if (CE_24X) begin
+                CT_MOD3 <= CT_MOD3 + 1'b1;
+            end
+        end
+    end
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
             CT_MATRIX <= 3'b000;
         end else begin
-            if (CE_PWM) begin
-                CT_PWM <= CT_PWM + 1'b1;
-            end
-
-            if (CE_24X) begin
-                if (CT_MOD3 == MOD3_B) begin
-                    CT_MOD3 <= MOD3_R;
-                end else begin
-                    CT_MOD3 <= CT_MOD3 + 1'b1;
-                end
-            end
-
             if (CE_8X) begin
                 CT_MATRIX <= CT_MATRIX + 1'b1;
             end
         end
     end
-
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
+            DATA <= 4'h0;
+        end else begin
+            if (CE_8X & (&CT_MATRIX)) begin
+                DATA <= DATA_HEX;
+            end
+        end
+    end
+    
     always @(posedge CLK, posedge RST) begin
         if (RST) begin
             COL_R <= 8'h00;
-            COL_G <= 8'h00;
-            COL_B <= 8'h00;
-            ROW   <= 8'h00;
         end else begin
-            COL_R <= 8'h00;
-            COL_G <= 8'h00;
-            COL_B <= 8'h00;
-            ROW   <= ROW_DATA;
-
-            case (CT_MOD3)
-                MOD3_R: COL_R <= DC3_8 & {8{PWM_R_P}};
-                MOD3_G: COL_G <= DC3_8 & {8{PWM_G_P}};
-                MOD3_B: COL_B <= DC3_8 & {8{PWM_B_P}};
-                default: begin
-                    COL_R <= 8'h00;
-                    COL_G <= 8'h00;
-                    COL_B <= 8'h00;
-                end
-            endcase
+            COL_R <= CL_R;
         end
     end
-
-    CW_PWM_FSM #(
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
+            COL_G <= 8'h00;
+        end else begin
+            COL_G <= CL_G;
+        end
+    end
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
+            COL_B <= 8'h00;
+        end else begin
+            COL_B <= CL_B;
+        end
+    end
+    
+    always @(posedge CLK, posedge RST) begin
+        if (RST) begin
+            ROW <= 8'h00;
+        end else begin
+            ROW <= ROW_DATA;
+        end
+    end
+    
+    // --------------------> other units
+    CW_PWM_FSM 
+    #(
         .UDW(8)
-    ) cw_pwm_fsm_r (
+    )
+    pwm_r
+    (
         .CLK(CLK),
         .RST(RST),
-        .RE(1'b0),
+        .RE(CE_24X),
         .CE(CE_PWM),
         .PWM_IN(PWM_R),
-        .PWM_P(PWM_R_P),
-        .PWM_N(PWM_R_N)
+        .PWM_P(PWM_P_R)
+        //.PWM_N() unused
     );
-
-    CW_PWM_FSM #(
+    
+    CW_PWM_FSM 
+    #(
         .UDW(8)
-    ) cw_pwm_fsm_g (
+    )
+    pwm_g
+    (
         .CLK(CLK),
         .RST(RST),
-        .RE(1'b0),
+        .RE(CE_24X),
         .CE(CE_PWM),
         .PWM_IN(PWM_G),
-        .PWM_P(PWM_G_P),
-        .PWM_N(PWM_G_N)
+        .PWM_P(PWM_P_G)
+        //.PWM_N() unused
     );
-
-    CW_PWM_FSM #(
+    
+    CW_PWM_FSM 
+    #(
         .UDW(8)
-    ) cw_pwm_fsm_b (
+    )
+    pwm_b
+    (
         .CLK(CLK),
         .RST(RST),
-        .RE(1'b0),
+        .RE(CE_24X),
         .CE(CE_PWM),
         .PWM_IN(PWM_B),
-        .PWM_P(PWM_B_P),
-        .PWM_N(PWM_B_N)
+        .PWM_P(PWM_P_B)
+        //.PWM_N() unused
     );
-
-    function [7:0] HEX_COLUMN;
-        input [3:0] HEX;
-        input [2:0] COL;
-        begin
-            HEX_COLUMN = 8'h00;
-
-            case (HEX)
-                4'h0: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0111_1100;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1010_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0111_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h1: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0000_0010;
-                        3'd2: HEX_COLUMN = 8'b0100_0010;
-                        3'd3: HEX_COLUMN = 8'b1111_1110;
-                        3'd4: HEX_COLUMN = 8'b1111_1110;
-                        3'd5: HEX_COLUMN = 8'b0000_0010;
-                        3'd6: HEX_COLUMN = 8'b0000_0010;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h2: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0100_0110;
-                        3'd2: HEX_COLUMN = 8'b1100_1110;
-                        3'd3: HEX_COLUMN = 8'b1000_1010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_0010;
-                        3'd6: HEX_COLUMN = 8'b0110_0010;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h3: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0100_0100;
-                        3'd2: HEX_COLUMN = 8'b1100_0110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0110_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h4: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0001_1000;
-                        3'd2: HEX_COLUMN = 8'b0010_1000;
-                        3'd3: HEX_COLUMN = 8'b0100_1010;
-                        3'd4: HEX_COLUMN = 8'b1111_1110;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0000_1010;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h5: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1110_0100;
-                        3'd2: HEX_COLUMN = 8'b1110_0110;
-                        3'd3: HEX_COLUMN = 8'b1010_0010;
-                        3'd4: HEX_COLUMN = 8'b1010_0010;
-                        3'd5: HEX_COLUMN = 8'b1011_1110;
-                        3'd6: HEX_COLUMN = 8'b1001_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h6: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0111_1100;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1101_1110;
-                        3'd6: HEX_COLUMN = 8'b0100_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h7: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1100_0000;
-                        3'd2: HEX_COLUMN = 8'b1100_0000;
-                        3'd3: HEX_COLUMN = 8'b1000_1110;
-                        3'd4: HEX_COLUMN = 8'b1001_1110;
-                        3'd5: HEX_COLUMN = 8'b1111_0000;
-                        3'd6: HEX_COLUMN = 8'b1110_0000;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h8: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0110_1100;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0110_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'h9: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0110_0100;
-                        3'd2: HEX_COLUMN = 8'b1111_0110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0111_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hA: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0011_1110;
-                        3'd2: HEX_COLUMN = 8'b0111_1110;
-                        3'd3: HEX_COLUMN = 8'b1100_1000;
-                        3'd4: HEX_COLUMN = 8'b1100_1000;
-                        3'd5: HEX_COLUMN = 8'b0111_1110;
-                        3'd6: HEX_COLUMN = 8'b0011_1110;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hB: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1111_1110;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1111_1110;
-                        3'd6: HEX_COLUMN = 8'b0110_1100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hC: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b0111_1100;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1000_0010;
-                        3'd4: HEX_COLUMN = 8'b1000_0010;
-                        3'd5: HEX_COLUMN = 8'b1100_0110;
-                        3'd6: HEX_COLUMN = 8'b0100_0100;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hD: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1111_1110;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1000_0010;
-                        3'd4: HEX_COLUMN = 8'b1100_0110;
-                        3'd5: HEX_COLUMN = 8'b0111_1100;
-                        3'd6: HEX_COLUMN = 8'b0011_1000;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hE: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1111_1110;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0010;
-                        3'd4: HEX_COLUMN = 8'b1001_0010;
-                        3'd5: HEX_COLUMN = 8'b1001_0010;
-                        3'd6: HEX_COLUMN = 8'b1000_0010;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-
-                4'hF: begin
-                    case (COL)
-                        3'd0: HEX_COLUMN = 8'b0000_0000;
-                        3'd1: HEX_COLUMN = 8'b1111_1110;
-                        3'd2: HEX_COLUMN = 8'b1111_1110;
-                        3'd3: HEX_COLUMN = 8'b1001_0000;
-                        3'd4: HEX_COLUMN = 8'b1001_0000;
-                        3'd5: HEX_COLUMN = 8'b1001_0000;
-                        3'd6: HEX_COLUMN = 8'b1000_0000;
-                        3'd7: HEX_COLUMN = 8'b0000_0000;
-                        default: HEX_COLUMN = 8'h00;
-                    endcase
-                end
-            endcase
-        end
-    endfunction
-
+    
+    CW_SYM_CODES cw_sym_codes
+    (
+        .ADDR({DATA, CT_MATRIX}),
+        .ROW_DATA(ROW_DATA)
+    );
+    
 endmodule
