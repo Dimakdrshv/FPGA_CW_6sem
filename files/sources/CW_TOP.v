@@ -324,8 +324,6 @@ module CW_TOP
         
         .I7_S_EX_ACK(RAM_S_EX_ACK),
         .I7_S_D_RD(RAM_S_D_RD),
-
-
         .I7_S_EX_REQ(RAM_S_EX_REQ),
         .I7_S_ADDR(RAM_S_ADDR),
         .I7_S_CMD(RAM_S_CMD),
@@ -342,7 +340,6 @@ module CW_TOP
         
         .IN(IN_A),
         
-
         .S_D_WR(RG_A_S_D_WR),     
         .S_CMD(RG_A_S_CMD),     
         .S_EX_REQ(RG_A_S_EX_REQ),
