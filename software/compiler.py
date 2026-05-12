@@ -35,19 +35,17 @@ def compile(cmd, n):
     ):
         command = re.split(r',\s|\s|,|/', cmd)
 
-        if (
-            command[0] == "add" or
-            command[0] == "sub" or
-            command[0] == "or" or
-            command[0] == "and"
-        ):
+        if command[0] == "nop":
+            result = 0 << 28
+
+        elif command[0] in ("add", "sub", "or", "and"):
             if command[0] == "add":
                 result = 1 << 28
-            if command[0] == "sub":
-                result = 2 << 28
-            if command[0] == "or":
-                result = 3 << 28
-            if command[0] == "and":
+            elif command[0] == "sub":
+                result = 14 << 28
+            elif command[0] == "or":
+                result = 12 << 28
+            elif command[0] == "and":
                 result = 4 << 28
 
             result |= int(command[1][1:]) << 19
@@ -58,28 +56,28 @@ def compile(cmd, n):
             else:
                 result |= int(command[2][1:]) << 11
 
-        elif command[0] == "inc" or command[0] == "dec":
+        elif command[0] in ("inc", "dec"):
             if command[0] == "inc":
-                result = 5 << 28
-            if command[0] == "dec":
-                result = 6 << 28
+                result = 7 << 28
+            elif command[0] == "dec":
+                result = 15 << 28
 
             result |= int(command[1][1:]) << 19
 
-        elif command[0] == "lsr" or command[0] == "rsr":
+        elif command[0] in ("lsr", "rsr"):
             if command[0] == "lsr":
-                result = 7 << 28
-            if command[0] == "rsr":
-                result = 8 << 28
+                result = 5 << 28
+            elif command[0] == "rsr":
+                result = 2 << 28
 
             result |= int(command[1][1:]) << 19
             result |= int(command[2][1:], 16) << 25
 
         elif command[0] == "jmp":
-            result = 9 << 28
+            result = 11 << 28
             result |= int(command[1][1:], 16)
 
-        elif command[0] == "jmps" or command[0] == "jmpc":
+        elif command[0] in ("jmps", "jmpc"):
             result = 10 << 28
 
             if command[0] == "jmpc":
@@ -89,59 +87,59 @@ def compile(cmd, n):
             result |= int(command[2][1:], 16) << 25
 
         elif command[0] == "ldl":
-            result = 11 << 28
+            result = 9 << 28
             result |= int(command[1][1:]) << 19
             result |= int(command[2][1:], 16)
 
         elif command[0] == "mov":
-            result = 11 << 28
+            result = 9 << 28
             result |= 1 << 27
             result |= int(command[1][1:]) << 19
             result |= int(command[2][1:]) << 11
 
         elif command[0] == "ld":
-            result = 12 << 28
+            result = 8 << 28
             result |= int(command[1][1:]) << 19
 
             if command[2] == "x":
                 result |= 0 << 26
-            if command[2] == "x+":
+            elif command[2] == "x+":
                 result |= 1 << 26
-            if command[2] == "y":
+            elif command[2] == "y":
                 result |= 2 << 26
-            if command[2] == "y+":
+            elif command[2] == "y+":
                 result |= 3 << 26
 
         elif command[0] == "stl":
-            result = 13 << 28
+            result = 3 << 28
 
             if command[1] == "x":
                 result |= 0 << 26
-            if command[1] == "x+":
+            elif command[1] == "x+":
                 result |= 1 << 26
-            if command[1] == "y":
+            elif command[1] == "y":
                 result |= 2 << 26
-            if command[1] == "y+":
+            elif command[1] == "y+":
                 result |= 3 << 26
 
             result |= int(command[2][1:], 16)
 
         elif command[0] == "st":
-            result = 14 << 28
+            result = 13 << 28
 
             if command[1] == "x":
                 result |= 0 << 26
-            if command[1] == "x+":
+            elif command[1] == "x+":
                 result |= 1 << 26
-            if command[1] == "y":
+            elif command[1] == "y":
                 result |= 2 << 26
-            if command[1] == "y+":
+            elif command[1] == "y+":
                 result |= 3 << 26
 
             result |= int(command[2][1:]) << 11
 
         elif command[0] == "reti":
-            result = 15 << 28
+            result = 6 << 28
 
         else:
             result = 0
@@ -150,6 +148,7 @@ def compile(cmd, n):
         raise Exception("Command violation {0}:{1}".format(n, cmd))
 
     return result
+
 
 def save_mem(in_path, out_path, name, size_mem):
     n = 1
