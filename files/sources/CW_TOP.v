@@ -89,12 +89,12 @@ module CW_TOP
         .SYS_NRST(SYS_NRST),
         .RST(RST)
     );
-    
+	 
     //----------------> Divider cascade stage 1
-    localparam CNT_WDT_DIVIDER_CASCADE_1 = 13;
-    localparam     MOD_DIVIDER_CASCADE_1 = 6250;
+    localparam CNT_WDT_DIVIDER_CASCADE_1 = 6;
+    localparam     MOD_DIVIDER_CASCADE_1 = 62;
     
-    wire CE_7_68kHz;
+    wire CE_768kHz;
     
     CW_DIVIDER
     #(
@@ -105,12 +105,12 @@ module CW_TOP
     (
         .CLK(CLK_48),
         .RST(RST),
-        .CE(CE_7_68kHz)
+        .CE(CE_768kHz)
     );
      
     //----------------> Divider cascade stage 2
-    localparam CNT_WDT_DIVIDER_CASCADE_2 = 3;
-    localparam     MOD_DIVIDER_CASCADE_2 = 8;
+    localparam CNT_WDT_DIVIDER_CASCADE_2 = 10;
+    localparam     MOD_DIVIDER_CASCADE_2 = 768;
     
     wire CE_1kHz;
     
@@ -123,7 +123,7 @@ module CW_TOP
     (
         .CLK(CLK_48),
         .RST(RST),
-        .CE(CE_7_68kHz),
+        .CE(CE_768kHz),
         .CEO(CE_1kHz)
     );
     
@@ -392,7 +392,7 @@ module CW_TOP
     (
         .CLK(CLK_48),
         .RST(RST),
-        .CE_PWM(CE_7_68kHz),
+        .CE_PWM(CE_768kHz),
         
         .S_EX_REQ(RGB_MC_S_EX_REQ),
         .S_ADDR(RGB_MC_S_ADDR),
@@ -407,7 +407,7 @@ module CW_TOP
         .ROW(ROW)
     );
     
-    //----------------> 7-SEG controller  
+    //----------------> 7-SEG controller 
     CW_7SEG_CNTRL cw_7seg_cntrl
     (
         .CLK(CLK_48),
@@ -423,8 +423,8 @@ module CW_TOP
 
         .AN(AN),
         .CAT(CAT)
-    );
-    
+    ); 
+	 
     //----------------> LED controller
     wire [15:0] OUT;
     
@@ -461,7 +461,7 @@ module CW_TOP
     assign LED_F = ~OUT[15];
     
     //----------------> IRQ monitor
-    wire [3:0] BTN = {BTN_3, BTN_2, BTN_1, BTN_0};
+    (* KEEP = "TRUE" *) wire [3:0] BTN = {BTN_3, BTN_2, BTN_1, BTN_0};
     
     CW_IRQ_MONITOR cw_irq_monitor
     (
