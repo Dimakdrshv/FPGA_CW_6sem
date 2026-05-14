@@ -5,16 +5,16 @@ ldl r27, $87 // 0003 7seg high address
 ldl r26, $c4 // 0004 7seg low address c4
 stl x, $00 // 0005 enable all 7seg digits by default
 ldl r27, $87 // 0006 7seg high address
-ldl r26, $c0 // 0007 7seg low address c0
+ldl r26, $c3 // 0007 mirrored 7seg address for mode pair
 stl x, $00 // 0008 mode pair = 00, default mode 0
 ldl r27, $87 // 0009 7seg high address
-ldl r26, $c1 // 000a 7seg low address c1
+ldl r26, $c2 // 000a mirrored 7seg address for operand A
 stl x, $00 // 000b operand A pair = 00
 ldl r27, $87 // 000c 7seg high address
-ldl r26, $c2 // 000d 7seg low address c2
+ldl r26, $c1 // 000d mirrored 7seg address for operand B
 stl x, $00 // 000e operand B pair = 00
 ldl r27, $87 // 000f 7seg high address
-ldl r26, $c3 // 0010 7seg low address c3
+ldl r26, $c0 // 0010 mirrored 7seg address for result/symbol
 stl x, $00 // 0011 result/symbol pair = 00
 ldl r27, $50 // 0012 RGB matrix high address
 ldl r26, $f8 // 0013 RGB symbol register
@@ -92,7 +92,7 @@ ldl r27, $81 // 005a LED/mode register high
 ldl r26, $06 // 005b LED/mode register low
 st x, r0 // 005c LEDs show mode
 ldl r27, $87 // 005d 7seg high address
-ldl r26, $c0 // 005e 7seg low address c0
+ldl r26, $c3 // 005e mirrored 7seg address for mode
 st x, r0 // 005f 7seg first pair = mode
 mov r1, r0 // 0060 compare mode with 2
 sub r1, $02 // 0061 Z=1 when mode is 2
@@ -107,13 +107,13 @@ ldl r27, $90 // 0069 state RAM high
 ldl r26, $01 // 006a state[1] A
 ld r2, x // 006b r2 = saved A
 ldl r27, $87 // 006c 7seg high address
-ldl r26, $c1 // 006d 7seg low address c1
+ldl r26, $c2 // 006d mirrored 7seg address for A
 st x, r2 // 006e 7seg A pair = saved A
 ldl r27, $90 // 006f state RAM high
 ldl r26, $02 // 0070 state[2] B
 ld r2, x // 0071 r2 = saved B
 ldl r27, $87 // 0072 7seg high address
-ldl r26, $c2 // 0073 7seg low address c2
+ldl r26, $c1 // 0073 mirrored 7seg address for B
 st x, r2 // 0074 7seg B pair = saved B
 jmp $0140 // 0075 return after mode display update
 ldl r27, $87 // 0076 7seg high address
@@ -126,7 +126,7 @@ ldl r26, $10 // 007c sequence table base
 add r26, r2 // 007d X = sequence table + index
 ld r3, x // 007e r3 = current symbol
 ldl r27, $87 // 007f 7seg high address
-ldl r26, $c3 // 0080 7seg low address c3
+ldl r26, $c0 // 0080 mirrored 7seg address for symbol
 st x, r3 // 0081 7seg symbol pair = current symbol
 jmp $0140 // 0082 return after mode 2 display update
 ldl r27, $87 // 0083 7seg high address
@@ -136,19 +136,19 @@ ldl r27, $90 // 0086 state RAM high
 ldl r26, $03 // 0087 state[3] red
 ld r2, x // 0088 r2 = red
 ldl r27, $87 // 0089 7seg high address
-ldl r26, $c1 // 008a 7seg low address c1
+ldl r26, $c2 // 008a mirrored 7seg address for R
 st x, r2 // 008b 7seg R pair = red
 ldl r27, $90 // 008c state RAM high
 ldl r26, $04 // 008d state[4] green
 ld r2, x // 008e r2 = green
 ldl r27, $87 // 008f 7seg high address
-ldl r26, $c2 // 0090 7seg low address c2
+ldl r26, $c1 // 0090 mirrored 7seg address for G
 st x, r2 // 0091 7seg G pair = green
 ldl r27, $90 // 0092 state RAM high
 ldl r26, $05 // 0093 state[5] blue
 ld r2, x // 0094 r2 = blue
 ldl r27, $87 // 0095 7seg high address
-ldl r26, $c3 // 0096 7seg low address c3
+ldl r26, $c0 // 0096 mirrored 7seg address for B color
 st x, r2 // 0097 7seg B pair = blue
 jmp $0140 // 0098 return after mode 4 display update
 ldl r27, $02 // 0099 BTN1: IRQ monitor high
@@ -170,7 +170,7 @@ ldl r27, $90 // 00a8 state RAM high
 ldl r26, $01 // 00a9 state[1] A
 st x, r2 // 00aa save A
 ldl r27, $87 // 00ab 7seg high address
-ldl r26, $c1 // 00ac 7seg low address c1
+ldl r26, $c2 // 00ac mirrored 7seg address for A
 st x, r2 // 00ad 7seg A pair = loaded A
 jmp $0140 // 00ae return after loading A
 ldl r27, $90 // 00af state RAM high
@@ -182,7 +182,7 @@ ldl r27, $50 // 00b4 RGB matrix high
 ldl r26, $f9 // 00b5 red PWM register
 st x, r2 // 00b6 apply red
 ldl r27, $87 // 00b7 7seg high address
-ldl r26, $c1 // 00b8 7seg low address c1
+ldl r26, $c2 // 00b8 mirrored 7seg address for R
 st x, r2 // 00b9 7seg R pair = red
 jmp $0140 // 00ba return after red update
 ldl r27, $02 // 00bb BTN2: IRQ monitor high
@@ -204,7 +204,7 @@ ldl r27, $90 // 00ca state RAM high
 ldl r26, $02 // 00cb state[2] B
 st x, r2 // 00cc save B
 ldl r27, $87 // 00cd 7seg high address
-ldl r26, $c2 // 00ce 7seg low address c2
+ldl r26, $c1 // 00ce mirrored 7seg address for B operand
 st x, r2 // 00cf 7seg B pair = loaded B
 jmp $0140 // 00d0 return after loading B
 ldl r27, $90 // 00d1 state RAM high
@@ -216,7 +216,7 @@ ldl r27, $50 // 00d6 RGB matrix high
 ldl r26, $fa // 00d7 green PWM register
 st x, r2 // 00d8 apply green
 ldl r27, $87 // 00d9 7seg high address
-ldl r26, $c2 // 00da 7seg low address c2
+ldl r26, $c1 // 00da mirrored 7seg address for G
 st x, r2 // 00db 7seg G pair = green
 jmp $0140 // 00dc return after green update
 ldl r27, $02 // 00dd BTN3: IRQ monitor high
@@ -251,7 +251,7 @@ ldl r26, $02 // 00f9 state[2] operand B
 ld r4, x // 00fa r4 = B
 sub r3, r4 // 00fb result = A - B
 ldl r27, $87 // 00fc 7seg high address
-ldl r26, $c3 // 00fd 7seg low address c3
+ldl r26, $c0 // 00fd mirrored 7seg address for result
 st x, r3 // 00fe 7seg result pair = operation result
 jmp $0140 // 00ff return after SUB
 ldl r27, $90 // 0100 mode 1 ADD: state base high
@@ -261,7 +261,7 @@ ldl r26, $02 // 0103 state[2] operand B
 ld r4, x // 0104 r4 = B
 add r3, r4 // 0105 result = A + B
 ldl r27, $87 // 0106 7seg high address
-ldl r26, $c3 // 0107 7seg low address c3
+ldl r26, $c0 // 0107 mirrored 7seg address for result
 st x, r3 // 0108 7seg result pair = operation result
 jmp $0140 // 0109 return after ADD
 ldl r27, $90 // 010a state RAM high
@@ -283,7 +283,7 @@ ldl r27, $50 // 0119 RGB matrix high
 ldl r26, $f8 // 011a symbol register
 st x, r3 // 011b apply matrix symbol
 ldl r27, $87 // 011c 7seg high address
-ldl r26, $c3 // 011d 7seg low address c3
+ldl r26, $c0 // 011d mirrored 7seg address for symbol
 st x, r3 // 011e 7seg symbol pair = symbol
 jmp $0140 // 011f return after symbol update
 ldl r27, $90 // 0120 mode 3 OR: state base high
@@ -293,7 +293,7 @@ ldl r26, $02 // 0123 state[2] operand B
 ld r4, x // 0124 r4 = B
 or r3, r4 // 0125 result = A OR B
 ldl r27, $87 // 0126 7seg high address
-ldl r26, $c3 // 0127 7seg low address c3
+ldl r26, $c0 // 0127 mirrored 7seg address for result
 st x, r3 // 0128 7seg result pair = operation result
 jmp $0140 // 0129 return after OR
 ldl r27, $90 // 012a state RAM high
@@ -305,7 +305,7 @@ ldl r27, $50 // 012f RGB matrix high
 ldl r26, $fb // 0130 blue PWM register
 st x, r2 // 0131 apply blue
 ldl r27, $87 // 0132 7seg high address
-ldl r26, $c3 // 0133 7seg low address c3
+ldl r26, $c0 // 0133 mirrored 7seg address for B color
 st x, r2 // 0134 7seg B pair = blue
 jmp $0140 // 0135 return after blue update
 ldl r27, $90 // 0136 mode 5 AND: state base high
@@ -315,7 +315,7 @@ ldl r26, $02 // 0139 state[2] operand B
 ld r4, x // 013a r4 = B
 and r3, r4 // 013b result = A AND B
 ldl r27, $87 // 013c 7seg high address
-ldl r26, $c3 // 013d 7seg low address c3
+ldl r26, $c0 // 013d mirrored 7seg address for result
 st x, r3 // 013e 7seg result pair = operation result
 jmp $0140 // 013f return after AND
 ldl r27, $93 // 0140 common IRQ exit: stack high address
