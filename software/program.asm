@@ -63,16 +63,16 @@ jmps $000d, $1 // 003d handle BTN0
 ldl r26, $71 // 003e BTN1 flag
 ld r0, x // 003f read BTN1 flag
 sub r0, $01 // 0040 Z=1 if BTN1 pending
-jmps $0057, $1 // 0041 handle BTN1
+jmps $007a, $1 // 0041 handle BTN1
 ldl r26, $72 // 0042 BTN2 flag
 ld r0, x // 0043 read BTN2 flag
 sub r0, $01 // 0044 Z=1 if BTN2 pending
-jmps $0075, $1 // 0045 handle BTN2
+jmps $00a2, $1 // 0045 handle BTN2
 ldl r26, $73 // 0046 BTN3 flag
 ld r0, x // 0047 read BTN3 flag
 sub r0, $01 // 0048 Z=1 if BTN3 pending
-jmps $0093, $1 // 0049 handle BTN3
-jmp $0140 // 004a no pending flag: return through common IRQ exit
+jmps $00ca, $1 // 0049 handle BTN3
+jmp $0195 // 004a no pending flag: return through common IRQ exit
 ldl r27, $02 // 004b BTN0: IRQ monitor high
 ldl r26, $70 // 004c BTN0 flag
 stl x, $00 // 004d clear BTN0 flag
@@ -93,236 +93,321 @@ ldl r26, $06 // 005b LED/mode register low
 st x, r0 // 005c LEDs show mode
 ldl r27, $87 // 005d 7seg high address
 ldl r26, $c3 // 005e mirrored 7seg address for mode
-st x, r0 // 005f 7seg first pair = mode
-mov r1, r0 // 0060 compare mode with 2
-sub r1, $02 // 0061 Z=1 when mode is 2
-jmps $0013, $1 // 0062 jump when matched
-mov r1, r0 // 0063 compare mode with 4
-sub r1, $04 // 0064 Z=1 when mode is 4
-jmps $001d, $1 // 0065 jump when matched
-ldl r27, $87 // 0066 7seg high address
-ldl r26, $c4 // 0067 7seg low address c4
-stl x, $00 // 0068 modes 0/1/3/5: show mode, A, B, result
-ldl r27, $90 // 0069 state RAM high
-ldl r26, $01 // 006a state[1] A
-ld r2, x // 006b r2 = saved A
-ldl r27, $87 // 006c 7seg high address
-ldl r26, $c2 // 006d mirrored 7seg address for A
-st x, r2 // 006e 7seg A pair = saved A
-ldl r27, $90 // 006f state RAM high
-ldl r26, $02 // 0070 state[2] B
-ld r2, x // 0071 r2 = saved B
-ldl r27, $87 // 0072 7seg high address
-ldl r26, $c1 // 0073 mirrored 7seg address for B
-st x, r2 // 0074 7seg B pair = saved B
-jmp $0140 // 0075 return after mode display update
-ldl r27, $87 // 0076 7seg high address
-ldl r26, $c4 // 0077 7seg low address c4
-stl x, $3c // 0078 mode 2: hide A and B pairs
+mov r5, r0 // 005f swap 7seg nibbles: copy value
+lsr r5, $4 // 0060 swap 7seg nibbles: low nibble -> high digit
+mov r6, r0 // 0061 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0062 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0063 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0064 7seg first pair = mode (nibbles swapped for physical digit order)
+mov r1, r0 // 0065 compare mode with 2
+sub r1, $02 // 0066 Z=1 when mode is 2
+jmps $001d, $1 // 0067 jump when matched
+mov r1, r0 // 0068 compare mode with 4
+sub r1, $04 // 0069 Z=1 when mode is 4
+jmps $002c, $1 // 006a jump when matched
+ldl r27, $87 // 006b 7seg high address
+ldl r26, $c4 // 006c 7seg low address c4
+stl x, $00 // 006d modes 0/1/3/5: show mode, A, B, result
+ldl r27, $90 // 006e state RAM high
+ldl r26, $01 // 006f state[1] A
+ld r2, x // 0070 r2 = saved A
+ldl r27, $87 // 0071 7seg high address
+ldl r26, $c2 // 0072 mirrored 7seg address for A
+mov r5, r2 // 0073 swap 7seg nibbles: copy value
+lsr r5, $4 // 0074 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 0075 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0076 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0077 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0078 7seg A pair = saved A (nibbles swapped for physical digit order)
 ldl r27, $90 // 0079 state RAM high
-ldl r26, $06 // 007a state[6] symbol index
-ld r2, x // 007b r2 = current symbol index
-ldl r26, $10 // 007c sequence table base
-add r26, r2 // 007d X = sequence table + index
-ld r3, x // 007e r3 = current symbol
-ldl r27, $87 // 007f 7seg high address
-ldl r26, $c0 // 0080 mirrored 7seg address for symbol
-st x, r3 // 0081 7seg symbol pair = current symbol
-jmp $0140 // 0082 return after mode 2 display update
-ldl r27, $87 // 0083 7seg high address
-ldl r26, $c4 // 0084 7seg low address c4
-stl x, $00 // 0085 mode 4: show mode, R, G, B
-ldl r27, $90 // 0086 state RAM high
-ldl r26, $03 // 0087 state[3] red
-ld r2, x // 0088 r2 = red
-ldl r27, $87 // 0089 7seg high address
-ldl r26, $c2 // 008a mirrored 7seg address for R
-st x, r2 // 008b 7seg R pair = red
-ldl r27, $90 // 008c state RAM high
-ldl r26, $04 // 008d state[4] green
-ld r2, x // 008e r2 = green
-ldl r27, $87 // 008f 7seg high address
-ldl r26, $c1 // 0090 mirrored 7seg address for G
-st x, r2 // 0091 7seg G pair = green
-ldl r27, $90 // 0092 state RAM high
-ldl r26, $05 // 0093 state[5] blue
-ld r2, x // 0094 r2 = blue
-ldl r27, $87 // 0095 7seg high address
-ldl r26, $c0 // 0096 mirrored 7seg address for B color
-st x, r2 // 0097 7seg B pair = blue
-jmp $0140 // 0098 return after mode 4 display update
-ldl r27, $02 // 0099 BTN1: IRQ monitor high
-ldl r26, $71 // 009a BTN1 flag
-stl x, $00 // 009b clear BTN1 flag
-ldl r27, $90 // 009c load mode: state base high
-ldl r26, $00 // 009d load mode: state[0]
-ld r0, x // 009e r0 = current mode
-mov r1, r0 // 009f compare mode with 2
-sub r1, $02 // 00a0 Z=1 when mode is 2
-jmps $009e, $1 // 00a1 jump when matched
-mov r1, r0 // 00a2 compare mode with 4
-sub r1, $04 // 00a3 Z=1 when mode is 4
-jmps $000a, $1 // 00a4 jump when matched
-ldl r27, $18 // 00a5 operand A register high
-ldl r26, $0c // 00a6 operand A register low
-ld r2, x // 00a7 r2 = input operand A
-ldl r27, $90 // 00a8 state RAM high
-ldl r26, $01 // 00a9 state[1] A
-st x, r2 // 00aa save A
-ldl r27, $87 // 00ab 7seg high address
-ldl r26, $c2 // 00ac mirrored 7seg address for A
-st x, r2 // 00ad 7seg A pair = loaded A
-jmp $0140 // 00ae return after loading A
-ldl r27, $90 // 00af state RAM high
-ldl r26, $03 // 00b0 state[3] red
-ld r2, x // 00b1 r2 = red
-add r2, $09 // 00b2 red += 9
-st x, r2 // 00b3 save red
-ldl r27, $50 // 00b4 RGB matrix high
-ldl r26, $f9 // 00b5 red PWM register
-st x, r2 // 00b6 apply red
-ldl r27, $87 // 00b7 7seg high address
-ldl r26, $c2 // 00b8 mirrored 7seg address for R
-st x, r2 // 00b9 7seg R pair = red
-jmp $0140 // 00ba return after red update
-ldl r27, $02 // 00bb BTN2: IRQ monitor high
-ldl r26, $72 // 00bc BTN2 flag
-stl x, $00 // 00bd clear BTN2 flag
-ldl r27, $90 // 00be load mode: state base high
-ldl r26, $00 // 00bf load mode: state[0]
-ld r0, x // 00c0 r0 = current mode
-mov r1, r0 // 00c1 compare mode with 2
-sub r1, $02 // 00c2 Z=1 when mode is 2
-jmps $007c, $1 // 00c3 jump when matched
-mov r1, r0 // 00c4 compare mode with 4
-sub r1, $04 // 00c5 Z=1 when mode is 4
-jmps $000a, $1 // 00c6 jump when matched
-ldl r27, $3e // 00c7 operand B register high
-ldl r26, $61 // 00c8 operand B register low
-ld r2, x // 00c9 r2 = input operand B
-ldl r27, $90 // 00ca state RAM high
-ldl r26, $02 // 00cb state[2] B
-st x, r2 // 00cc save B
-ldl r27, $87 // 00cd 7seg high address
-ldl r26, $c1 // 00ce mirrored 7seg address for B operand
-st x, r2 // 00cf 7seg B pair = loaded B
-jmp $0140 // 00d0 return after loading B
-ldl r27, $90 // 00d1 state RAM high
-ldl r26, $04 // 00d2 state[4] green
-ld r2, x // 00d3 r2 = green
-add r2, $09 // 00d4 green += 9
-st x, r2 // 00d5 save green
-ldl r27, $50 // 00d6 RGB matrix high
-ldl r26, $fa // 00d7 green PWM register
-st x, r2 // 00d8 apply green
-ldl r27, $87 // 00d9 7seg high address
-ldl r26, $c1 // 00da mirrored 7seg address for G
-st x, r2 // 00db 7seg G pair = green
-jmp $0140 // 00dc return after green update
-ldl r27, $02 // 00dd BTN3: IRQ monitor high
-ldl r26, $73 // 00de BTN3 flag
-stl x, $00 // 00df clear BTN3 flag
-ldl r27, $90 // 00e0 load mode: state base high
-ldl r26, $00 // 00e1 load mode: state[0]
-ld r0, x // 00e2 r0 = current mode
-mov r1, r0 // 00e3 compare mode with 0
-sub r1, $00 // 00e4 Z=1 when mode is 0
-jmps $0010, $1 // 00e5 jump when matched
-mov r1, r0 // 00e6 compare mode with 1
-sub r1, $01 // 00e7 Z=1 when mode is 1
-jmps $0017, $1 // 00e8 jump when matched
-mov r1, r0 // 00e9 compare mode with 2
-sub r1, $02 // 00ea Z=1 when mode is 2
-jmps $001e, $1 // 00eb jump when matched
-mov r1, r0 // 00ec compare mode with 3
-sub r1, $03 // 00ed Z=1 when mode is 3
-jmps $0031, $1 // 00ee jump when matched
-mov r1, r0 // 00ef compare mode with 4
-sub r1, $04 // 00f0 Z=1 when mode is 4
-jmps $0038, $1 // 00f1 jump when matched
-mov r1, r0 // 00f2 compare mode with 5
-sub r1, $05 // 00f3 Z=1 when mode is 5
-jmps $0041, $1 // 00f4 jump when matched
-jmp $0140 // 00f5 unknown mode
-ldl r27, $90 // 00f6 mode 0 SUB: state base high
-ldl r26, $01 // 00f7 state[1] operand A
-ld r3, x // 00f8 r3 = A
-ldl r26, $02 // 00f9 state[2] operand B
-ld r4, x // 00fa r4 = B
-sub r3, r4 // 00fb result = A - B
-ldl r27, $87 // 00fc 7seg high address
-ldl r26, $c0 // 00fd mirrored 7seg address for result
-st x, r3 // 00fe 7seg result pair = operation result
-jmp $0140 // 00ff return after SUB
-ldl r27, $90 // 0100 mode 1 ADD: state base high
-ldl r26, $01 // 0101 state[1] operand A
-ld r3, x // 0102 r3 = A
-ldl r26, $02 // 0103 state[2] operand B
-ld r4, x // 0104 r4 = B
-add r3, r4 // 0105 result = A + B
-ldl r27, $87 // 0106 7seg high address
-ldl r26, $c0 // 0107 mirrored 7seg address for result
-st x, r3 // 0108 7seg result pair = operation result
-jmp $0140 // 0109 return after ADD
-ldl r27, $90 // 010a state RAM high
-ldl r26, $06 // 010b state[6] symbol index
-ld r2, x // 010c r2 = symbol index
-inc r2 // 010d index++
-mov r1, r2 // 010e copy index
-sub r1, $10 // 010f Z=1 if index == 16
-jmps $0001, $1 // 0110 wrap sequence
-jmp $0113 // 0111 store index
-ldl r2, $00 // 0112 wrapped index = 0
-ldl r27, $90 // 0113 state RAM high
-ldl r26, $06 // 0114 state[6] symbol index
-st x, r2 // 0115 save symbol index
-ldl r26, $10 // 0116 sequence table base
-add r26, r2 // 0117 X = sequence table + index
-ld r3, x // 0118 r3 = sequence symbol
-ldl r27, $50 // 0119 RGB matrix high
-ldl r26, $f8 // 011a symbol register
-st x, r3 // 011b apply matrix symbol
-ldl r27, $87 // 011c 7seg high address
-ldl r26, $c0 // 011d mirrored 7seg address for symbol
-st x, r3 // 011e 7seg symbol pair = symbol
-jmp $0140 // 011f return after symbol update
-ldl r27, $90 // 0120 mode 3 OR: state base high
-ldl r26, $01 // 0121 state[1] operand A
-ld r3, x // 0122 r3 = A
-ldl r26, $02 // 0123 state[2] operand B
-ld r4, x // 0124 r4 = B
-or r3, r4 // 0125 result = A OR B
-ldl r27, $87 // 0126 7seg high address
-ldl r26, $c0 // 0127 mirrored 7seg address for result
-st x, r3 // 0128 7seg result pair = operation result
-jmp $0140 // 0129 return after OR
-ldl r27, $90 // 012a state RAM high
-ldl r26, $05 // 012b state[5] blue
-ld r2, x // 012c r2 = blue
-add r2, $09 // 012d blue += 9
-st x, r2 // 012e save blue
-ldl r27, $50 // 012f RGB matrix high
-ldl r26, $fb // 0130 blue PWM register
-st x, r2 // 0131 apply blue
-ldl r27, $87 // 0132 7seg high address
-ldl r26, $c0 // 0133 mirrored 7seg address for B color
-st x, r2 // 0134 7seg B pair = blue
-jmp $0140 // 0135 return after blue update
-ldl r27, $90 // 0136 mode 5 AND: state base high
-ldl r26, $01 // 0137 state[1] operand A
-ld r3, x // 0138 r3 = A
-ldl r26, $02 // 0139 state[2] operand B
-ld r4, x // 013a r4 = B
-and r3, r4 // 013b result = A AND B
-ldl r27, $87 // 013c 7seg high address
-ldl r26, $c0 // 013d mirrored 7seg address for result
-st x, r3 // 013e 7seg result pair = operation result
-jmp $0140 // 013f return after AND
-ldl r27, $93 // 0140 common IRQ exit: stack high address
-ldl r26, $fc // 0141 stack return slot low byte
-stl x+, $38 // 0142 force return PC low byte to idle loop 0038
-stl x+, $00 // 0143 force return PC high byte to idle loop 0038
-stl x, $00 // 0144 saved SREG flags for RETI pop
-ldl r30, $ff // 0145 SP low before RETI pops SREG, PCH, PCL
-ldl r31, $93 // 0146 SP high before RETI pops SREG, PCH, PCL
-reti // 0147 re-enable IRQ and return to idle loop
+ldl r26, $02 // 007a state[2] B
+ld r2, x // 007b r2 = saved B
+ldl r27, $87 // 007c 7seg high address
+ldl r26, $c1 // 007d mirrored 7seg address for B
+mov r5, r2 // 007e swap 7seg nibbles: copy value
+lsr r5, $4 // 007f swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 0080 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0081 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0082 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0083 7seg B pair = saved B (nibbles swapped for physical digit order)
+jmp $0195 // 0084 return after mode display update
+ldl r27, $87 // 0085 7seg high address
+ldl r26, $c4 // 0086 7seg low address c4
+stl x, $3c // 0087 mode 2: hide A and B pairs
+ldl r27, $90 // 0088 state RAM high
+ldl r26, $06 // 0089 state[6] symbol index
+ld r2, x // 008a r2 = current symbol index
+ldl r26, $10 // 008b sequence table base
+add r26, r2 // 008c X = sequence table + index
+ld r3, x // 008d r3 = current symbol
+ldl r27, $87 // 008e 7seg high address
+ldl r26, $c0 // 008f mirrored 7seg address for symbol
+mov r5, r3 // 0090 swap 7seg nibbles: copy value
+lsr r5, $4 // 0091 swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0092 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0093 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0094 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0095 7seg symbol pair = current symbol (nibbles swapped for physical digit order)
+jmp $0195 // 0096 return after mode 2 display update
+ldl r27, $87 // 0097 7seg high address
+ldl r26, $c4 // 0098 7seg low address c4
+stl x, $00 // 0099 mode 4: show mode, R, G, B
+ldl r27, $90 // 009a state RAM high
+ldl r26, $03 // 009b state[3] red
+ld r2, x // 009c r2 = red
+ldl r27, $87 // 009d 7seg high address
+ldl r26, $c2 // 009e mirrored 7seg address for R
+mov r5, r2 // 009f swap 7seg nibbles: copy value
+lsr r5, $4 // 00a0 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00a1 swap 7seg nibbles: copy value again
+rsr r6, $4 // 00a2 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 00a3 swap 7seg nibbles: AB becomes BA
+st x, r5 // 00a4 7seg R pair = red (nibbles swapped for physical digit order)
+ldl r27, $90 // 00a5 state RAM high
+ldl r26, $04 // 00a6 state[4] green
+ld r2, x // 00a7 r2 = green
+ldl r27, $87 // 00a8 7seg high address
+ldl r26, $c1 // 00a9 mirrored 7seg address for G
+mov r5, r2 // 00aa swap 7seg nibbles: copy value
+lsr r5, $4 // 00ab swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00ac swap 7seg nibbles: copy value again
+rsr r6, $4 // 00ad swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 00ae swap 7seg nibbles: AB becomes BA
+st x, r5 // 00af 7seg G pair = green (nibbles swapped for physical digit order)
+ldl r27, $90 // 00b0 state RAM high
+ldl r26, $05 // 00b1 state[5] blue
+ld r2, x // 00b2 r2 = blue
+ldl r27, $87 // 00b3 7seg high address
+ldl r26, $c0 // 00b4 mirrored 7seg address for B color
+mov r5, r2 // 00b5 swap 7seg nibbles: copy value
+lsr r5, $4 // 00b6 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00b7 swap 7seg nibbles: copy value again
+rsr r6, $4 // 00b8 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 00b9 swap 7seg nibbles: AB becomes BA
+st x, r5 // 00ba 7seg B pair = blue (nibbles swapped for physical digit order)
+jmp $0195 // 00bb return after mode 4 display update
+ldl r27, $02 // 00bc BTN1: IRQ monitor high
+ldl r26, $71 // 00bd BTN1 flag
+stl x, $00 // 00be clear BTN1 flag
+ldl r27, $90 // 00bf load mode: state base high
+ldl r26, $00 // 00c0 load mode: state[0]
+ld r0, x // 00c1 r0 = current mode
+mov r1, r0 // 00c2 compare mode with 2
+sub r1, $02 // 00c3 Z=1 when mode is 2
+jmps $00d0, $1 // 00c4 jump when matched
+mov r1, r0 // 00c5 compare mode with 4
+sub r1, $04 // 00c6 Z=1 when mode is 4
+jmps $000f, $1 // 00c7 jump when matched
+ldl r27, $18 // 00c8 operand A register high
+ldl r26, $0c // 00c9 operand A register low
+ld r2, x // 00ca r2 = input operand A
+ldl r27, $90 // 00cb state RAM high
+ldl r26, $01 // 00cc state[1] A
+st x, r2 // 00cd save A
+ldl r27, $87 // 00ce 7seg high address
+ldl r26, $c2 // 00cf mirrored 7seg address for A
+mov r5, r2 // 00d0 swap 7seg nibbles: copy value
+lsr r5, $4 // 00d1 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00d2 swap 7seg nibbles: copy value again
+rsr r6, $4 // 00d3 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 00d4 swap 7seg nibbles: AB becomes BA
+st x, r5 // 00d5 7seg A pair = loaded A (nibbles swapped for physical digit order)
+jmp $0195 // 00d6 return after loading A
+ldl r27, $90 // 00d7 state RAM high
+ldl r26, $03 // 00d8 state[3] red
+ld r2, x // 00d9 r2 = red
+add r2, $09 // 00da red += 9
+st x, r2 // 00db save red
+ldl r27, $50 // 00dc RGB matrix high
+ldl r26, $f9 // 00dd red PWM register
+st x, r2 // 00de apply red
+ldl r27, $87 // 00df 7seg high address
+ldl r26, $c2 // 00e0 mirrored 7seg address for R
+mov r5, r2 // 00e1 swap 7seg nibbles: copy value
+lsr r5, $4 // 00e2 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00e3 swap 7seg nibbles: copy value again
+rsr r6, $4 // 00e4 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 00e5 swap 7seg nibbles: AB becomes BA
+st x, r5 // 00e6 7seg R pair = red (nibbles swapped for physical digit order)
+jmp $0195 // 00e7 return after red update
+ldl r27, $02 // 00e8 BTN2: IRQ monitor high
+ldl r26, $72 // 00e9 BTN2 flag
+stl x, $00 // 00ea clear BTN2 flag
+ldl r27, $90 // 00eb load mode: state base high
+ldl r26, $00 // 00ec load mode: state[0]
+ld r0, x // 00ed r0 = current mode
+mov r1, r0 // 00ee compare mode with 2
+sub r1, $02 // 00ef Z=1 when mode is 2
+jmps $00a4, $1 // 00f0 jump when matched
+mov r1, r0 // 00f1 compare mode with 4
+sub r1, $04 // 00f2 Z=1 when mode is 4
+jmps $000f, $1 // 00f3 jump when matched
+ldl r27, $3e // 00f4 operand B register high
+ldl r26, $61 // 00f5 operand B register low
+ld r2, x // 00f6 r2 = input operand B
+ldl r27, $90 // 00f7 state RAM high
+ldl r26, $02 // 00f8 state[2] B
+st x, r2 // 00f9 save B
+ldl r27, $87 // 00fa 7seg high address
+ldl r26, $c1 // 00fb mirrored 7seg address for B operand
+mov r5, r2 // 00fc swap 7seg nibbles: copy value
+lsr r5, $4 // 00fd swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 00fe swap 7seg nibbles: copy value again
+rsr r6, $4 // 00ff swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0100 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0101 7seg B pair = loaded B (nibbles swapped for physical digit order)
+jmp $0195 // 0102 return after loading B
+ldl r27, $90 // 0103 state RAM high
+ldl r26, $04 // 0104 state[4] green
+ld r2, x // 0105 r2 = green
+add r2, $09 // 0106 green += 9
+st x, r2 // 0107 save green
+ldl r27, $50 // 0108 RGB matrix high
+ldl r26, $fa // 0109 green PWM register
+st x, r2 // 010a apply green
+ldl r27, $87 // 010b 7seg high address
+ldl r26, $c1 // 010c mirrored 7seg address for G
+mov r5, r2 // 010d swap 7seg nibbles: copy value
+lsr r5, $4 // 010e swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 010f swap 7seg nibbles: copy value again
+rsr r6, $4 // 0110 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0111 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0112 7seg G pair = green (nibbles swapped for physical digit order)
+jmp $0195 // 0113 return after green update
+ldl r27, $02 // 0114 BTN3: IRQ monitor high
+ldl r26, $73 // 0115 BTN3 flag
+stl x, $00 // 0116 clear BTN3 flag
+ldl r27, $90 // 0117 load mode: state base high
+ldl r26, $00 // 0118 load mode: state[0]
+ld r0, x // 0119 r0 = current mode
+mov r1, r0 // 011a compare mode with 0
+sub r1, $00 // 011b Z=1 when mode is 0
+jmps $0010, $1 // 011c jump when matched
+mov r1, r0 // 011d compare mode with 1
+sub r1, $01 // 011e Z=1 when mode is 1
+jmps $001c, $1 // 011f jump when matched
+mov r1, r0 // 0120 compare mode with 2
+sub r1, $02 // 0121 Z=1 when mode is 2
+jmps $0028, $1 // 0122 jump when matched
+mov r1, r0 // 0123 compare mode with 3
+sub r1, $03 // 0124 Z=1 when mode is 3
+jmps $0040, $1 // 0125 jump when matched
+mov r1, r0 // 0126 compare mode with 4
+sub r1, $04 // 0127 Z=1 when mode is 4
+jmps $004c, $1 // 0128 jump when matched
+mov r1, r0 // 0129 compare mode with 5
+sub r1, $05 // 012a Z=1 when mode is 5
+jmps $005a, $1 // 012b jump when matched
+jmp $0195 // 012c unknown mode
+ldl r27, $90 // 012d mode 0 SUB: state base high
+ldl r26, $01 // 012e state[1] operand A
+ld r3, x // 012f r3 = A
+ldl r26, $02 // 0130 state[2] operand B
+ld r4, x // 0131 r4 = B
+sub r3, r4 // 0132 result = A - B
+ldl r27, $87 // 0133 7seg high address
+ldl r26, $c0 // 0134 mirrored 7seg address for result
+mov r5, r3 // 0135 swap 7seg nibbles: copy value
+lsr r5, $4 // 0136 swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0137 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0138 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0139 swap 7seg nibbles: AB becomes BA
+st x, r5 // 013a 7seg result pair = operation result (nibbles swapped for physical digit order)
+jmp $0195 // 013b return after SUB
+ldl r27, $90 // 013c mode 1 ADD: state base high
+ldl r26, $01 // 013d state[1] operand A
+ld r3, x // 013e r3 = A
+ldl r26, $02 // 013f state[2] operand B
+ld r4, x // 0140 r4 = B
+add r3, r4 // 0141 result = A + B
+ldl r27, $87 // 0142 7seg high address
+ldl r26, $c0 // 0143 mirrored 7seg address for result
+mov r5, r3 // 0144 swap 7seg nibbles: copy value
+lsr r5, $4 // 0145 swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0146 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0147 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0148 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0149 7seg result pair = operation result (nibbles swapped for physical digit order)
+jmp $0195 // 014a return after ADD
+ldl r27, $90 // 014b state RAM high
+ldl r26, $06 // 014c state[6] symbol index
+ld r2, x // 014d r2 = symbol index
+inc r2 // 014e index++
+mov r1, r2 // 014f copy index
+sub r1, $10 // 0150 Z=1 if index == 16
+jmps $0001, $1 // 0151 wrap sequence
+jmp $0154 // 0152 store index
+ldl r2, $00 // 0153 wrapped index = 0
+ldl r27, $90 // 0154 state RAM high
+ldl r26, $06 // 0155 state[6] symbol index
+st x, r2 // 0156 save symbol index
+ldl r26, $10 // 0157 sequence table base
+add r26, r2 // 0158 X = sequence table + index
+ld r3, x // 0159 r3 = sequence symbol
+ldl r27, $50 // 015a RGB matrix high
+ldl r26, $f8 // 015b symbol register
+st x, r3 // 015c apply matrix symbol
+ldl r27, $87 // 015d 7seg high address
+ldl r26, $c0 // 015e mirrored 7seg address for symbol
+mov r5, r3 // 015f swap 7seg nibbles: copy value
+lsr r5, $4 // 0160 swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0161 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0162 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0163 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0164 7seg symbol pair = symbol (nibbles swapped for physical digit order)
+jmp $0195 // 0165 return after symbol update
+ldl r27, $90 // 0166 mode 3 OR: state base high
+ldl r26, $01 // 0167 state[1] operand A
+ld r3, x // 0168 r3 = A
+ldl r26, $02 // 0169 state[2] operand B
+ld r4, x // 016a r4 = B
+or r3, r4 // 016b result = A OR B
+ldl r27, $87 // 016c 7seg high address
+ldl r26, $c0 // 016d mirrored 7seg address for result
+mov r5, r3 // 016e swap 7seg nibbles: copy value
+lsr r5, $4 // 016f swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0170 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0171 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0172 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0173 7seg result pair = operation result (nibbles swapped for physical digit order)
+jmp $0195 // 0174 return after OR
+ldl r27, $90 // 0175 state RAM high
+ldl r26, $05 // 0176 state[5] blue
+ld r2, x // 0177 r2 = blue
+add r2, $09 // 0178 blue += 9
+st x, r2 // 0179 save blue
+ldl r27, $50 // 017a RGB matrix high
+ldl r26, $fb // 017b blue PWM register
+st x, r2 // 017c apply blue
+ldl r27, $87 // 017d 7seg high address
+ldl r26, $c0 // 017e mirrored 7seg address for B color
+mov r5, r2 // 017f swap 7seg nibbles: copy value
+lsr r5, $4 // 0180 swap 7seg nibbles: low nibble -> high digit
+mov r6, r2 // 0181 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0182 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0183 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0184 7seg B pair = blue (nibbles swapped for physical digit order)
+jmp $0195 // 0185 return after blue update
+ldl r27, $90 // 0186 mode 5 AND: state base high
+ldl r26, $01 // 0187 state[1] operand A
+ld r3, x // 0188 r3 = A
+ldl r26, $02 // 0189 state[2] operand B
+ld r4, x // 018a r4 = B
+and r3, r4 // 018b result = A AND B
+ldl r27, $87 // 018c 7seg high address
+ldl r26, $c0 // 018d mirrored 7seg address for result
+mov r5, r3 // 018e swap 7seg nibbles: copy value
+lsr r5, $4 // 018f swap 7seg nibbles: low nibble -> high digit
+mov r6, r3 // 0190 swap 7seg nibbles: copy value again
+rsr r6, $4 // 0191 swap 7seg nibbles: high nibble -> low digit
+or r5, r6 // 0192 swap 7seg nibbles: AB becomes BA
+st x, r5 // 0193 7seg result pair = operation result (nibbles swapped for physical digit order)
+jmp $0195 // 0194 return after AND
+ldl r27, $93 // 0195 common IRQ exit: stack high address
+ldl r26, $fc // 0196 stack return slot low byte
+stl x+, $38 // 0197 force return PC low byte to idle loop 0038
+stl x+, $00 // 0198 force return PC high byte to idle loop 0038
+stl x, $00 // 0199 saved SREG flags for RETI pop
+ldl r30, $ff // 019a SP low before RETI pops SREG, PCH, PCL
+ldl r31, $93 // 019b SP high before RETI pops SREG, PCH, PCL
+reti // 019c re-enable IRQ and return to idle loop
